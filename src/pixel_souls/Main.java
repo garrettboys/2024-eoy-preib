@@ -6,18 +6,17 @@ import java.awt.Component;
 import javax.swing.JFrame;
 
 public class Main extends JFrame{
+	private static final long serialVersionUID = 8162784762091143676L; // auto gen by Eclipse, unnessecary but warning is annoying
 	private static final int WIDTH =1800;
 	private static final int HEIGHT=1600;
 	
 	public Main () {
-		super("Brickbreaker");
+		super("Pixel Souls");
 		setSize(WIDTH, HEIGHT);
 		Game play = new Game();
 		((Component) play).setFocusable(true);
 		
-		Color RoyalBlue = new Color(22,13,193);
-		
-		setBackground(RoyalBlue);
+		setBackground(Color.BLACK);
 		
 		
 		getContentPane().add(play);
@@ -28,6 +27,7 @@ public class Main extends JFrame{
 	}
 	
 
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		Main run = new Main();
 		
