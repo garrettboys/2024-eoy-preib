@@ -19,7 +19,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		new Thread(this).start();	
 		this.addKeyListener(this);
 		key =-1; 
-		world = new World("/initmap.xml", "/tileset.png");
+		world = new World("/initmap.xml", "assets/tileset.png");
 		map = world.getMap();
 		tileset = world.getTileset();
 	}

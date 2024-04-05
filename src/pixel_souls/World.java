@@ -62,9 +62,10 @@ public class World {
     }
 
     private Image[] loadTilesetFromSpriteSheet(String spriteSheetPath, int tileWidth, int tileHeight, int columns, int rows) {
+        Image[] exception = new Image[255]; // return a blank array if an exception occurs
         try {
-            Image spriteSheet = ImageIO.read(new File(spriteSheetPath));
-            Image[] tilesetTemp = new Image[columns * rows];
+            Image spriteSheet = ImageIO.read(new File(spriteSheetPath)); // reads the sprite sheet from the file path
+            Image[] tilesetTemp = new Image[columns * rows]; // creates an array to store the tile images
             
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < columns; j++) {
@@ -80,7 +81,7 @@ public class World {
             return tilesetTemp;
         } catch (IOException e) {
             e.printStackTrace();
-            return null; // i dont want to make error handling so this is ok
+            return exception; // i dont want to make error handling so this is ok
         }
     }
 

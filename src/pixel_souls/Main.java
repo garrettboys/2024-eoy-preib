@@ -2,6 +2,7 @@ package pixel_souls;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.io.File;
 
 import javax.swing.JFrame;
 
@@ -14,6 +15,7 @@ public class Main extends JFrame{
 		super("Pixel Souls");
 		setSize(WIDTH, HEIGHT);
 		Game play = new Game();
+		System.out.println(new File(".").getAbsolutePath());
 		((Component) play).setFocusable(true);
 		
 		setBackground(Color.BLACK);
