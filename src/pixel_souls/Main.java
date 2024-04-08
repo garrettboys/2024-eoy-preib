@@ -8,14 +8,13 @@ import javax.swing.JFrame;
 
 public class Main extends JFrame{
 	private static final long serialVersionUID = 8162784762091143676L; // auto gen by Eclipse, unnessecary but warning is annoying
-	private static final int WIDTH =1800;
-	private static final int HEIGHT=1600;
+	private static final int WIDTH =1312;
+	private static final int HEIGHT=704;
 	
 	public Main () {
 		super("Pixel Souls");
 		setSize(WIDTH, HEIGHT);
 		Game play = new Game();
-		System.out.println(new File(".").getAbsolutePath());
 		((Component) play).setFocusable(true);
 		
 		setBackground(Color.BLACK);

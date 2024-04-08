@@ -2,7 +2,7 @@ package pixel_souls;
 import java.awt.*;
 import javax.swing.*;
 
-public class Entity {
+public class Entity { // copypasted from brickbreaker, idk if i will usee
 	protected int x;
 	protected int y;
 	protected int width;

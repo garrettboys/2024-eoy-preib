@@ -12,16 +12,12 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	private BufferedImage back; 
 	private int key; 
 	private World world;
-	private int[][] map;
-	private Image[] tileset;
 	
 	public Game() {
 		new Thread(this).start();	
 		this.addKeyListener(this);
 		key =-1; 
-		world = new World("/initmap.xml", "assets/tileset.png");
-		map = world.getMap();
-		tileset = world.getTileset();
+		world = new World();
 	}
 	
 	public void run()
@@ -51,23 +47,12 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	
 		g2d.clearRect(0,0,getSize().width, getSize().height);
 		// CODE BELOW
-		render(g2d, tileset);
+		world.render(g2d);
 		// CODE ABOVE
 		twoDgraph.drawImage(back, null, 0, 0);
 
 	}
-
-	public void render(Graphics g2d, Image[] tileset) { 
-	    for (int row = 0; row < map.length; row++) {
-	        for (int col = 0; col < map[row].length; col++) {
-	            int tileId = map[row][col];
-	            if (tileId >= 0) { // -1 is empty tile, but I don't have any right now
-	                g2d.drawImage(tileset[tileId], col * 64, row * 64, null);
-	            }
-	        }
-	    }
-    }
-
+	
 	@Override
 	public void keyTyped(KeyEvent e) {
 		key = e.getKeyCode();
