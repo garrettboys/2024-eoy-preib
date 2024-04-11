@@ -10,14 +10,12 @@ import java.awt.event.*;
 public class Game  extends JPanel implements Runnable, KeyListener{
 	
 	private BufferedImage back; 
-	private int key; 
 	private World world;
 	private Player player;
 	
 	public Game() {
 		new Thread(this).start();	
 		this.addKeyListener(this);
-		key = -1; 
 		world = new World("assets/map.png");
 		player = new Player();
 	}
@@ -56,39 +54,58 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 
 	}
 	
+	public Boolean canMoveUp() {
+		return !world.isCollision(player.getTileX(), player.getTileY() - 1);
+	}
+
+	public Boolean canMoveDown() {
+		return !world.isCollision(player.getTileX(), player.getTileY() + 1);
+	}
+	
+	public Boolean canMoveLeft() {
+		return !world.isCollision(player.getTileX() - 1, player.getTileY());
+	}
+	
+	public Boolean canMoveRight() {
+		return !world.isCollision(player.getTileX() + 1, player.getTileY());
+	}
+	
 	@Override
 	public void keyTyped(KeyEvent e) {
-		key = e.getKeyCode();
+	
 	}
 	
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		key = e.getKeyCode();
+        switch (e.getKeyCode()) {
+        case KeyEvent.VK_A:
+        	if (canMoveLeft())
+            player.setX(player.getX() - 32);
+            break;
+        case KeyEvent.VK_D:
+        	if (canMoveRight())
+            player.setX(player.getX() + 32);
+            break;
+        case KeyEvent.VK_W:
+        	if (canMoveUp())
+            player.setY(player.getY() - 32);
+            break;
+        case KeyEvent.VK_S:
+        	if (canMoveDown())
+            player.setY(player.getY() + 32);
+            break;
+    }
 		
 	}
 
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_A:
-                player.setX(player.getX() - 32);
-                break;
-            case KeyEvent.VK_D:
-                player.setX(player.getX() + 32);
-                break;
-            case KeyEvent.VK_W:
-                player.setY(player.getY() - 32);
-                break;
-            case KeyEvent.VK_S:
-                player.setY(player.getY() + 32);
-                break;
-        }
 	
 	}
 
-	
+
 
 	
 }

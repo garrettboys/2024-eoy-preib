@@ -70,5 +70,13 @@ public class Player  {
 		this.health = health;
 	}
 	
+	public int getTileX() {
+		return x / 32;
+	}
+	
+	public int getTileY() {
+		return y / 32;
+	}
+	
 
 }
