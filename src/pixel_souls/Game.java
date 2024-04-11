@@ -17,7 +17,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		new Thread(this).start();	
 		this.addKeyListener(this);
 		key =-1; 
-		world = new World();
+		world = new World("assets/map.png");
 	}
 	
 	public void run()
@@ -39,15 +39,15 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	public void paint(Graphics g){
 		
 		Graphics2D twoDgraph = (Graphics2D) g; 
-		if(back==null)
-			back=(BufferedImage)( (createImage(getWidth(), getHeight()))); 
+		if (back == null) {
+		    back = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+		}
 		
 
 		Graphics g2d = back.createGraphics();
-	
-		g2d.clearRect(0,0,getSize().width, getSize().height);
+
 		// CODE BELOW
-		world.render(g2d);
+		world.mapRender(g2d);
 		// CODE ABOVE
 		twoDgraph.drawImage(back, null, 0, 0);
 
