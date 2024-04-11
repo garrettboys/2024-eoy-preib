@@ -12,12 +12,14 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	private BufferedImage back; 
 	private int key; 
 	private World world;
+	private Player player;
 	
 	public Game() {
 		new Thread(this).start();	
 		this.addKeyListener(this);
-		key =-1; 
+		key = -1; 
 		world = new World("assets/map.png");
+		player = new Player();
 	}
 	
 	public void run()
@@ -48,6 +50,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 
 		// CODE BELOW
 		world.mapRender(g2d);
+		g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
 		// CODE ABOVE
 		twoDgraph.drawImage(back, null, 0, 0);
 
@@ -68,8 +71,21 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-	key = e.getKeyCode();
-
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_A:
+                player.setX(player.getX() - 32);
+                break;
+            case KeyEvent.VK_D:
+                player.setX(player.getX() + 32);
+                break;
+            case KeyEvent.VK_W:
+                player.setY(player.getY() - 32);
+                break;
+            case KeyEvent.VK_S:
+                player.setY(player.getY() + 32);
+                break;
+        }
+	
 	}
 
 	
