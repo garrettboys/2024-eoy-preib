@@ -12,12 +12,16 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	private BufferedImage back; 
 	private World world;
 	private Player player;
+	private Boss boss;
+	private long curtime;  // player movement cooldown control
 	
 	public Game() {
 		new Thread(this).start();	
 		this.addKeyListener(this);
 		world = new World();
 		player = new Player();
+		boss = new Boss();
+		curtime = 0;
 	}
 	
 	public void run()
@@ -48,11 +52,18 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 
 		// CODE BELOW
 		world.mapRenderUnder(g2d);
-		g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+		entityRender(g2d);
 		world.mapRenderOver(g2d);
 		// CODE ABOVE
 		twoDgraph.drawImage(back, null, 0, 0);
 
+	}
+	
+	public void entityRender(Graphics g) {
+		g.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+		g.setColor(Color.RED);
+		g.fillRect(boss.getX(), boss.getY(), boss.getWidth(), boss.getHeight());
+		g.setColor(Color.WHITE);
 	}
 	
 	public Boolean canMoveUp() {
@@ -79,24 +90,28 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-        switch (e.getKeyCode()) {
-        case KeyEvent.VK_A:
-        	if (canMoveLeft())
-            player.setX(player.getX() - 32);
-            break;
-        case KeyEvent.VK_D:
-        	if (canMoveRight())
-            player.setX(player.getX() + 32);
-            break;
-        case KeyEvent.VK_W:
-        	if (canMoveUp())
-            player.setY(player.getY() - 32);
-            break;
-        case KeyEvent.VK_S:
-        	if (canMoveDown())
-            player.setY(player.getY() + 32);
-            break;
-    }
+		
+		if (System.currentTimeMillis() - curtime < 100) 
+			return;
+		
+	    	switch (e.getKeyCode()) {
+	        case KeyEvent.VK_A:
+	        	if (canMoveLeft())
+	            player.setX(player.getX() - 32);
+	            break;
+	        case KeyEvent.VK_D:
+	        	if (canMoveRight())
+	            player.setX(player.getX() + 32);
+	            break;
+	        case KeyEvent.VK_W:
+	        	if (canMoveUp())
+	            player.setY(player.getY() - 32);
+	            break;
+	        case KeyEvent.VK_S:
+	        	if (canMoveDown())
+	            player.setY(player.getY() + 32);
+	            break;
+	    }
 		
 	}
 

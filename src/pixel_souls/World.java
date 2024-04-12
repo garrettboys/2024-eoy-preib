@@ -40,12 +40,11 @@ public class World {
             {11, 9}, // hardcoded map of collision enabled tiles
             {6, 3}, {7, 3}, {6, 4}, {7, 4},
             {12, 2}, {13, 2}, {12, 3}, {13, 3},
-            {17, 1},
-            {28, 2},
+            {17, 1}, {29, 9}, {28, 2},
             {36, 2}, {37, 2}, {36, 3}, {37, 3},
             {34, 10}, {35, 10}, {34, 11}, {35, 11}, {29, 4}, {30, 4},
             {32, 16}, {33, 16}, {32, 15}, {33, 15},
-            {26, 15}, {26, 18},
+            {26, 15}, {26, 18}, {29, 5}, {30, 5},
             {14, 15}, {14, 18},
             {6, 13}, {7, 13}, {6, 14}, {7, 14},
             {2, 10}, {2, 11}, {3, 11}, {3, 10}
@@ -57,7 +56,11 @@ public class World {
     }
     
     public boolean isCollision(int row, int column) {
+    	try {
             return collisionMap[row][column];
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return true;
+		}
     }
     
     

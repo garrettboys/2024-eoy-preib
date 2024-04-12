@@ -1,40 +1,18 @@
 package pixel_souls;
-
 import java.awt.image.BufferedImage;
 
-public class Player  {
-	private int x;
-	private int y;
-	private int width;
-	private int height;
-	private int health = 100;
-	private int moveCooldownMs;
+public class Boss { // screw inheritance
+	private int x, y, width, height, health;
 	private BufferedImage sprite;
 	
-	public Player() {
-		this.x = 640 + 2;
-		this.y = 576; 
-		this.width = 32 - 4;
-		this.height = 32;
-		this.moveCooldownMs = 100;
-	}
-	
-	public Player(int x, int y) {
-		this.x = x;
-		this.y = y;
+	public Boss() {
+		x = 640;
+		y = 288;
 		width = 32;
 		height = 32;
-	}
-	
-	public Player(int x, int y, int width, int height) {
-		this.x = x;
-		this.y = y;
-		this.width = width;
-		this.height = height;
-		this.health = 100;
+		health = 1000;
 	}
 
-	
 	public int getX() {
 		return x;
 	}
@@ -74,14 +52,6 @@ public class Player  {
 	public void setHealth(int health) {
 		this.health = health;
 	}
-	
-	public int getTileX() {
-		return x / 32;
-	}
-	
-	public int getTileY() {
-		return y / 32;
-	}
 
 	public BufferedImage getSprite() {
 		return sprite;
@@ -90,14 +60,7 @@ public class Player  {
 	public void setSprite(BufferedImage sprite) {
 		this.sprite = sprite;
 	}
-
-	public int getMoveCooldownMs() {
-		return moveCooldownMs;
-	}
-
-	public void setMoveCooldownMs(int moveDelayMs) {
-		this.moveCooldownMs = moveDelayMs;
-	}
+	
 	
 
 }

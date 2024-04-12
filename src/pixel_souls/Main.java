@@ -2,8 +2,6 @@ package pixel_souls;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.io.File;
-
 import javax.swing.JFrame;
 
 public class Main extends JFrame{
