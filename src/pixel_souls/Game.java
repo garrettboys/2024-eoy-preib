@@ -16,7 +16,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	public Game() {
 		new Thread(this).start();	
 		this.addKeyListener(this);
-		world = new World("assets/map.png");
+		world = new World();
 		player = new Player();
 	}
 	
@@ -47,8 +47,9 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		Graphics g2d = back.createGraphics();
 
 		// CODE BELOW
-		world.mapRender(g2d);
+		world.mapRenderUnder(g2d);
 		g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+		world.mapRenderOver(g2d);
 		// CODE ABOVE
 		twoDgraph.drawImage(back, null, 0, 0);
 

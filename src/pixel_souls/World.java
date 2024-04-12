@@ -8,7 +8,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class World {
-    private BufferedImage map; // store the entire tilemap as one image
+    private BufferedImage[] map; // store the entire tilemap as one image
     private boolean[][] collisionMap; // store the walkable status of each tile
 
     /*
@@ -16,14 +16,16 @@ public class World {
      * Requires the path to the image file that contains the map
      * @param imagePath the path to the image file that contains the map
      */
-    public World(String imagePath) {
-        loadMap(imagePath); // load the map at initialization
+    public World() {
+        loadMap("assets/decorUnderPlayer.png", "assets/decorOverPlayer.png"); // load the map at initialization
         createCollisionMap(); // create the collision map at initialization
     }
 
-    private void loadMap(String path) {
+    private void loadMap(String pathUnder, String pathOver) {
         try {
-            map = ImageIO.read(new File(path)); // load the map image
+        	map = new BufferedImage[2];
+            map[0] = ImageIO.read(new File(pathUnder)); // load the map image under the 
+            map[1] = ImageIO.read(new File(pathOver)); // load the map image
         } catch (IOException e) {
             e.printStackTrace();
             map = null; // if there's an error, set map to null
@@ -35,14 +37,14 @@ public class World {
     	collisionMap = new boolean[40][21]; // [column][row]];
     	
     	int[][] collisionTiles = { // [column][row] tiles that are collide enabled
-            {11, 9},
+            {11, 9}, // hardcoded map of collision enabled tiles
             {6, 3}, {7, 3}, {6, 4}, {7, 4},
             {12, 2}, {13, 2}, {12, 3}, {13, 3},
             {17, 1},
             {28, 2},
             {36, 2}, {37, 2}, {36, 3}, {37, 3},
-            {34, 10}, {35, 10}, {34, 11}, {35, 11},
-            {32, 16}, {33, 16}, {32, 17}, {33, 17},
+            {34, 10}, {35, 10}, {34, 11}, {35, 11}, {29, 4}, {30, 4},
+            {32, 16}, {33, 16}, {32, 15}, {33, 15},
             {26, 15}, {26, 18},
             {14, 15}, {14, 18},
             {6, 13}, {7, 13}, {6, 14}, {7, 14},
@@ -59,9 +61,15 @@ public class World {
     }
     
     
-    public void mapRender(Graphics g) {
+    public void mapRenderUnder(Graphics g) {
         if (map != null) {
-            g.drawImage(map, 0, 0, null); // draw the map at the top-left corner
+            g.drawImage(map[0], 0, 0, null); // draw the first layer of the map at the top-left corner
         }
     }
+    
+	public void mapRenderOver(Graphics g) {
+		if (map != null) {
+			g.drawImage(map[1], 0, 0, null); // draw the second layer of the map at the top-left corner
+		}
+	}
 }
