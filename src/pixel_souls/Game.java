@@ -14,6 +14,12 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	private Player player;
 	private Boss boss;
 	private long curtime;  // player movement cooldown control
+	private int idleFrameCount;
+	private int runFrameCount;
+	private int northAtkFrameCount;
+	private int eastAtkFrameCount;
+	private int southAtkFrameCount;
+	private int westAtkFrameCount;
 	
 	public Game() {
 		new Thread(this).start();	
@@ -22,6 +28,13 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		player = new Player();
 		boss = new Boss();
 		curtime = 0;
+		idleFrameCount = 1;
+		runFrameCount = 1;
+		northAtkFrameCount = 1;
+		eastAtkFrameCount = 1;
+		southAtkFrameCount = 1;
+		westAtkFrameCount = 1;
+
 	}
 	
 	public void run()
@@ -60,10 +73,48 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	}
 	
 	public void entityRender(Graphics g) {
-		g.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+		g.drawImage(getCurrentPlayerSprite(), player.getX(), player.getY(), null);
 		g.setColor(Color.RED);
 		g.fillRect(boss.getX(), boss.getY(), boss.getWidth(), boss.getHeight());
 		g.setColor(Color.WHITE);
+	}
+	
+	public BufferedImage getCurrentPlayerSprite() {
+		switch (player.getState()) {
+		case IDLE:
+			idleFrameCount++;
+			if (idleFrameCount == 8)
+				idleFrameCount = 1;
+			return player.getIdleSprite(idleFrameCount);
+		case RUN:
+			runFrameCount++;
+			if (runFrameCount == 7)
+				runFrameCount = 1;
+			return player.getRunSprite(runFrameCount);
+		case ATK_NORTH:
+			northAtkFrameCount++;
+			if (northAtkFrameCount == 7)
+				northAtkFrameCount = 1;
+			return player.getNorthAtkSprite(northAtkFrameCount);
+		case ATK_EAST:
+			eastAtkFrameCount++;
+			if (eastAtkFrameCount == 7)
+				eastAtkFrameCount = 1;
+			return player.getEastAtkSprite(eastAtkFrameCount);
+		case ATK_SOUTH:
+			southAtkFrameCount++;
+			if (southAtkFrameCount == 7)
+				southAtkFrameCount = 1;
+			return player.getSouthAtkSprite(southAtkFrameCount);
+		case ATK_WEST:
+			westAtkFrameCount++;
+			if (westAtkFrameCount == 7)
+				westAtkFrameCount = 1;
+			return player.getWestAtkSprite(westAtkFrameCount);
+		default:
+			return player.getIdleSprite(1);
+		}
+		
 	}
 	
 	public Boolean canMoveUp() {
@@ -91,25 +142,28 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	@Override
 	public void keyPressed(KeyEvent e) {
 		
-		if (System.currentTimeMillis() - curtime < 100) 
+		if (System.currentTimeMillis() - curtime < player.getMoveCooldownMs()) 
 			return;
-		
 	    	switch (e.getKeyCode()) {
 	        case KeyEvent.VK_A:
 	        	if (canMoveLeft())
 	            player.setX(player.getX() - 32);
+	        	curtime = System.currentTimeMillis();
 	            break;
 	        case KeyEvent.VK_D:
 	        	if (canMoveRight())
 	            player.setX(player.getX() + 32);
+	        	curtime = System.currentTimeMillis();
 	            break;
 	        case KeyEvent.VK_W:
 	        	if (canMoveUp())
 	            player.setY(player.getY() - 32);
+	        	curtime = System.currentTimeMillis();
 	            break;
 	        case KeyEvent.VK_S:
 	        	if (canMoveDown())
 	            player.setY(player.getY() + 32);
+	        	curtime = System.currentTimeMillis();
 	            break;
 	    }
 		
