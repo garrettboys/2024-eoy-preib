@@ -1,9 +1,13 @@
 package pixel_souls;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.image.BufferedImage; 
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+
+import javax.swing.JPanel;
 
 
 @SuppressWarnings("serial")
@@ -13,27 +17,21 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	private World world;
 	private Player player;
 	private Boss boss;
-	private long curtime;  // player movement cooldown control
-	private int idleFrameCount;
-	private int runFrameCount;
-	private int northAtkFrameCount;
-	private int eastAtkFrameCount;
-	private int southAtkFrameCount;
-	private int westAtkFrameCount;
+ 
+
+	// controlling frametiming below
+	final double TARGET_FRAME_TIME = 1000.0 / 60.0;  // 60 FPS
+	private double deltaTime;
+	long lastTime = System.nanoTime(); 
+	final double NANO_TO_MILLI = 1000000.0;
 	
 	public Game() {
 		new Thread(this).start();	
 		this.addKeyListener(this);
 		world = new World();
-		player = new Player();
+		player = new Player(640, 576, 64, 64);
 		boss = new Boss();
-		curtime = 0;
-		idleFrameCount = 1;
-		runFrameCount = 1;
-		northAtkFrameCount = 1;
-		eastAtkFrameCount = 1;
-		southAtkFrameCount = 1;
-		westAtkFrameCount = 1;
+		deltaTime = 0.0167f;
 
 	}
 	
@@ -42,10 +40,18 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	   	try
 	   	{
 	   		while(true)
-	   		{
-	   		   Thread.currentThread();
-			Thread.sleep(3);
-	           repaint();
+	   		{ // designed to maintain a standard 60 fps for rendering
+	   		    long now = System.nanoTime();
+	   		    deltaTime = (now - lastTime) / NANO_TO_MILLI;  // Calculate deltaTime in milliseconds
+	   		    lastTime = now;
+
+	   		    repaint();  // Perform game updates and rendering
+	   		    // Calculate how much time to sleep to maintain 60 FPS
+	   		    double timeTaken = (System.nanoTime() - now) / NANO_TO_MILLI;
+	   		    double timeToSleep = TARGET_FRAME_TIME - timeTaken;  // Time remaining to reach 16.67 milliseconds
+
+	   		    if (timeToSleep > 0) 
+	   		            Thread.sleep((long)timeToSleep);  // Sleep to maintain the frame rate
 	         }
 	      }
 	   		catch(Exception e)
@@ -54,6 +60,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	  	}
 	
 	public void paint(Graphics g){
+
 		
 		Graphics2D twoDgraph = (Graphics2D) g; 
 		if (back == null) {
@@ -68,70 +75,24 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		entityRender(g2d);
 		world.mapRenderOver(g2d);
 		// CODE ABOVE
+
+		
 		twoDgraph.drawImage(back, null, 0, 0);
 
 	}
 	
 	public void entityRender(Graphics g) {
-		g.drawImage(getCurrentPlayerSprite(), player.getX(), player.getY(), null);
+		player.update(deltaTime);
+		g.drawImage(player.getCurrentSprite(), player.getX(), player.getY(), null);
 		g.setColor(Color.RED);
 		g.fillRect(boss.getX(), boss.getY(), boss.getWidth(), boss.getHeight());
 		g.setColor(Color.WHITE);
 	}
 	
-	public BufferedImage getCurrentPlayerSprite() {
-		switch (player.getState()) {
-		case IDLE:
-			idleFrameCount++;
-			if (idleFrameCount == 8)
-				idleFrameCount = 1;
-			return player.getIdleSprite(idleFrameCount);
-		case RUN:
-			runFrameCount++;
-			if (runFrameCount == 7)
-				runFrameCount = 1;
-			return player.getRunSprite(runFrameCount);
-		case ATK_NORTH:
-			northAtkFrameCount++;
-			if (northAtkFrameCount == 7)
-				northAtkFrameCount = 1;
-			return player.getNorthAtkSprite(northAtkFrameCount);
-		case ATK_EAST:
-			eastAtkFrameCount++;
-			if (eastAtkFrameCount == 7)
-				eastAtkFrameCount = 1;
-			return player.getEastAtkSprite(eastAtkFrameCount);
-		case ATK_SOUTH:
-			southAtkFrameCount++;
-			if (southAtkFrameCount == 7)
-				southAtkFrameCount = 1;
-			return player.getSouthAtkSprite(southAtkFrameCount);
-		case ATK_WEST:
-			westAtkFrameCount++;
-			if (westAtkFrameCount == 7)
-				westAtkFrameCount = 1;
-			return player.getWestAtkSprite(westAtkFrameCount);
-		default:
-			return player.getIdleSprite(1);
-		}
-		
-	}
-	
-	public Boolean canMoveUp() {
-		return !world.isCollision(player.getTileX(), player.getTileY() - 1);
-	}
 
-	public Boolean canMoveDown() {
-		return !world.isCollision(player.getTileX(), player.getTileY() + 1);
-	}
 	
-	public Boolean canMoveLeft() {
-		return !world.isCollision(player.getTileX() - 1, player.getTileY());
-	}
 	
-	public Boolean canMoveRight() {
-		return !world.isCollision(player.getTileX() + 1, player.getTileY());
-	}
+	
 	
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -141,41 +102,54 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		
-		if (System.currentTimeMillis() - curtime < player.getMoveCooldownMs()) 
-			return;
-	    	switch (e.getKeyCode()) {
-	        case KeyEvent.VK_A:
-	        	if (canMoveLeft())
-	            player.setX(player.getX() - 32);
-	        	curtime = System.currentTimeMillis();
-	            break;
-	        case KeyEvent.VK_D:
-	        	if (canMoveRight())
-	            player.setX(player.getX() + 32);
-	        	curtime = System.currentTimeMillis();
-	            break;
-	        case KeyEvent.VK_W:
-	        	if (canMoveUp())
-	            player.setY(player.getY() - 32);
-	        	curtime = System.currentTimeMillis();
-	            break;
-	        case KeyEvent.VK_S:
-	        	if (canMoveDown())
-	            player.setY(player.getY() + 32);
-	        	curtime = System.currentTimeMillis();
-	            break;
-	    }
-		
+		switch (e.getKeyCode()) {
+	    case KeyEvent.VK_A: 
+	    	player.setState(Player.States.RUN_LEFT);
+            player.setDx(-player.getSpeed());  
+            player.setLastDirectionMoved(Player.Directions.WEST);
+            break;
+	    case KeyEvent.VK_D:
+	    	player.setState(Player.States.RUN_RIGHT);
+            player.setDx(player.getSpeed());  
+            player.setLastDirectionMoved(Player.Directions.EAST);
+            break;
+	    case KeyEvent.VK_W:
+	        player.setDy(-player.getSpeed());  
+	        player.setLastDirectionMoved(Player.Directions.NORTH);
+	        break;
+	    case KeyEvent.VK_S:
+	        player.setDy(player.getSpeed()); 
+	        player.setLastDirectionMoved(Player.Directions.SOUTH);
+	        break;
+	    case KeyEvent.VK_F:
+	    	player.setState(player.getAttackDirection());
+	    	break;
+		}
 	}
 
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-	
+		switch (e.getKeyCode()) {
+        case KeyEvent.VK_A: 
+        	player.setState(Player.States.IDLE);
+            player.setDx(0);
+            break;
+        case KeyEvent.VK_D:
+        	player.setState(Player.States.IDLE);
+            player.setDx(0); 
+            break;
+        case KeyEvent.VK_W:
+        	player.setState(Player.States.IDLE);
+            player.setDy(0);  
+            break;
+        case KeyEvent.VK_S:
+        	player.setState(Player.States.IDLE);
+            player.setDy(0);  
+            break;
+		}      
+		            
 	}
 
 
-
-	
 }

@@ -28,7 +28,7 @@ public class World {
             map[1] = ImageIO.read(new File(pathOver)); // load the map image
         } catch (IOException e) {
             e.printStackTrace();
-            map = null; // if there's an error, set map to null
+            map = null; 
         }
     }
 
@@ -57,11 +57,15 @@ public class World {
     
     public boolean isCollision(int row, int column) {
     	try {
+    		if (row >= 0 && row < collisionMap.length && column >= 0 && column < collisionMap[0].length)
             return collisionMap[row][column];
+    		else
+    			return false;
 		} catch (ArrayIndexOutOfBoundsException e) {
 			return true;
 		}
     }
+    
     
     
     public void mapRenderUnder(Graphics g) {
