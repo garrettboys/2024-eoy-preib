@@ -6,17 +6,21 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
 
 @SuppressWarnings("serial")
-public class Game  extends JPanel implements Runnable, KeyListener{
+public class Game  extends JPanel implements Runnable, KeyListener{ 
 	
 	private BufferedImage back; 
 	private World world;
 	private Player player;
 	private Boss boss;
+	private Set<Integer> pressedKeys;
+	private boolean isAttacking;
  
 
 	// controlling frametiming below
@@ -32,7 +36,14 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		player = new Player(640, 576, 64, 64);
 		boss = new Boss();
 		deltaTime = 0.0167f;
-
+		pressedKeys = new HashSet<>();
+		isAttacking = false;
+		
+		player.setAttackCompletionListener(() -> {
+		    onAttackComplete();  // lambda function to call onAttackComplete in the Player class using listener interface
+		    // this is called when the player's attack animation is complete so it is not interrupted
+		});
+		
 	}
 	
 	public void run()
@@ -94,61 +105,76 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	
 	
 	
-	@Override
 	public void keyTyped(KeyEvent e) {
 	
 	}
-	
 
-	@Override
 	public void keyPressed(KeyEvent e) {
-		switch (e.getKeyCode()) {
-	    case KeyEvent.VK_A: 
-	    	player.setState(Player.States.RUN_LEFT);
-            player.setDx(-player.getSpeed());  
-            player.setLastDirectionMoved(Player.Directions.WEST);
-            break;
-	    case KeyEvent.VK_D:
-	    	player.setState(Player.States.RUN_RIGHT);
-            player.setDx(player.getSpeed());  
-            player.setLastDirectionMoved(Player.Directions.EAST);
-            break;
-	    case KeyEvent.VK_W:
-	        player.setDy(-player.getSpeed());  
-	        player.setLastDirectionMoved(Player.Directions.NORTH);
-	        break;
-	    case KeyEvent.VK_S:
-	        player.setDy(player.getSpeed()); 
-	        player.setLastDirectionMoved(Player.Directions.SOUTH);
-	        break;
-	    case KeyEvent.VK_F:
-	    	player.setState(player.getAttackDirection());
-	    	break;
-		}
+	    pressedKeys.add(e.getKeyCode());
+	    updatePlayerState();
+	}
+	
+	public void keyReleased(KeyEvent e) {
+	    pressedKeys.remove(e.getKeyCode());
+	    updatePlayerState();
+	}
+
+	private void updatePlayerState() {
+	    // if currently attacking, ignore all other input until the attack is complete
+	    if (isAttacking) return;
+
+	    boolean hasHorizontalInput = pressedKeys.contains(KeyEvent.VK_A) || pressedKeys.contains(KeyEvent.VK_D);
+	    boolean hasVerticalInput = pressedKeys.contains(KeyEvent.VK_W) || pressedKeys.contains(KeyEvent.VK_S);
+
+	    // reset movement velocities
+	    player.setDx(0);
+	    player.setDy(0);
+
+	    if (pressedKeys.contains(KeyEvent.VK_A)) {
+	        player.setState(Player.States.RUN_LEFT);
+	        player.setDx(-player.getSpeed());
+	        player.setLastDirectionMoved(Player.Directions.WEST);
+	    } else if (pressedKeys.contains(KeyEvent.VK_D)) {
+	        player.setState(Player.States.RUN_RIGHT);
+	        player.setDx(player.getSpeed());
+	        player.setLastDirectionMoved(Player.Directions.EAST);
+	    }
+
+	    if (pressedKeys.contains(KeyEvent.VK_W)) {
+	        player.setDy(-player.getSpeed());
+	    } else if (pressedKeys.contains(KeyEvent.VK_S)) {
+	        player.setDy(player.getSpeed());
+	    }
+	    if (!hasHorizontalInput && hasVerticalInput) {
+	        player.setState(player.getLastDirectionMoved() == Player.Directions.WEST ? Player.States.RUN_LEFT : Player.States.RUN_RIGHT);
+	    }
+
+	    if (pressedKeys.contains(KeyEvent.VK_F) && canAttack()) {
+	        player.setState(player.getAttackDirection());
+	        System.out.println(player.attackCheck(boss));
+	        isAttacking = true;
+	    }
+
+	    // reset to appropriate idle state based on last direction moved if no movement keys are pressed
+	    if (!hasHorizontalInput && !hasVerticalInput && !isAttacking) {
+	        if (player.getLastDirectionMoved() == Player.Directions.WEST) {
+	            player.setState(Player.States.IDLE_LEFT);
+	        } else {
+	            player.setState(Player.States.IDLE_RIGHT);
+	        }
+	    }
+	}
+
+	private boolean canAttack() {
+	    return !player.getState().name().startsWith("ATK");
 	}
 
 
-	@Override
-	public void keyReleased(KeyEvent e) {
-		switch (e.getKeyCode()) {
-        case KeyEvent.VK_A: 
-        	player.setState(Player.States.IDLE);
-            player.setDx(0);
-            break;
-        case KeyEvent.VK_D:
-        	player.setState(Player.States.IDLE);
-            player.setDx(0); 
-            break;
-        case KeyEvent.VK_W:
-        	player.setState(Player.States.IDLE);
-            player.setDy(0);  
-            break;
-        case KeyEvent.VK_S:
-        	player.setState(Player.States.IDLE);
-            player.setDy(0);  
-            break;
-		}      
-		            
+
+	
+	public void onAttackComplete() {
+	    isAttacking = false;
+	    updatePlayerState();  // re-evaluate state based on current keys
 	}
 
 

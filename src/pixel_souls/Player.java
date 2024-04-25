@@ -19,11 +19,14 @@ public class Player  {
 	private int speed;
 	private States state;
 	private Directions lastDirectionMoved = Directions.EAST;
+	private int attackRange;
 	
 	private Map<States, BufferedImage[]> sprites = new HashMap<>();
 	// see getCurrentPlayerSprite() in Game for below variables
-	private int idleFrameCount;
-	private int idleAnimationCount;
+	private int idleRightFrameCount;
+	private int idleRightAnimationCount;
+	private int idleLeftFrameCount;
+	private int idleLeftAnimationCount;
 	private int runLeftFrameCount;
 	private int runLeftAnimationCount;
 	private int runRightFrameCount;
@@ -34,8 +37,26 @@ public class Player  {
 	private int westAtkFrameCount, westAnimationCount;
 	private int animationSpeed;
 	
+	// below interface is used to notify the game that the player has finished attacking and can now move again
+	
+	public interface AttackCompletionListener {
+	    void onAttackComplete();
+	}
+	
+	private AttackCompletionListener attackCompletionListener;
+	
+	public void setAttackCompletionListener(AttackCompletionListener listener) {
+	    this.attackCompletionListener = listener;
+	}
+	
+	public void finishAttack() {
+	    if (attackCompletionListener != null) {
+	        attackCompletionListener.onAttackComplete();
+	    }
+	}
+	
 	public enum States {
-		IDLE, RUN_RIGHT, RUN_LEFT, ATK_NORTH, ATK_EAST, ATK_SOUTH, ATK_WEST
+		IDLE_RIGHT, IDLE_LEFT, RUN_RIGHT, RUN_LEFT, RUN_UP, RUN_DOWN, ATK_NORTH, ATK_EAST, ATK_SOUTH, ATK_WEST
 	}
 	
 	public enum Directions {
@@ -51,16 +72,18 @@ public class Player  {
 		this.height = 32;
 		this.health = 100;
 		this.moveCooldownMs = 75;
-		this.setState(States.IDLE);
+		this.setState(States.IDLE_RIGHT);
 		this.setSpeed(90);
-		this.idleFrameCount = 1;
+		this.idleRightFrameCount = 1;
+		this.idleLeftFrameCount = 1;
 		this.runRightFrameCount = 1;
 		this.runLeftFrameCount = 1;
 		this.northAtkFrameCount = 1;
 		this.eastAtkFrameCount = 1;
 		this.southAtkFrameCount = 1;
 		this.westAtkFrameCount = 1;
-		this.idleAnimationCount = 1;
+		this.idleRightAnimationCount = 1;
+		this.idleLeftAnimationCount = 1;
 		this.runRightAnimationCount = 1;
 		this.runLeftAnimationCount = 1;
 		this.northAnimationCount = 1;
@@ -68,6 +91,7 @@ public class Player  {
 		this.southAnimationCount = 1;
 		this.westAnimationCount = 1;
 		this.animationSpeed = 5; // 5 real frames to 1 animation frame
+		this.setAttackRange(32);
 		setSprites();
 	}
 	
@@ -80,16 +104,17 @@ public class Player  {
 		this.height = height;
 		this.health = 100;
 		this.moveCooldownMs = 75;
-		this.setState(States.IDLE);
+		this.setState(States.IDLE_RIGHT);
 		this.setSpeed(90);
-		this.idleFrameCount = 1;
+		this.idleRightFrameCount = 1;
+		this.idleLeftFrameCount = 1;
 		this.runRightFrameCount = 1;
 		this.runLeftFrameCount = 1;
 		this.northAtkFrameCount = 1;
 		this.eastAtkFrameCount = 1;
 		this.southAtkFrameCount = 1;
 		this.westAtkFrameCount = 1;
-		this.idleAnimationCount = 1;
+		this.idleRightAnimationCount = 1;
 		this.runRightAnimationCount = 1;
 		this.runLeftAnimationCount = 1;
 		this.northAnimationCount = 1;
@@ -97,14 +122,22 @@ public class Player  {
 		this.southAnimationCount = 1;
 		this.westAnimationCount = 1;
 		this.animationSpeed = 5; // 5 real frames to 1 animation frame
+		this.setAttackRange(32);
 		setSprites();
+		
 	}
 
 	public void setSprites() { // instantiate a map of sprites for each state, standard naming for sprites
 		try { 
-			BufferedImage[] idle = new BufferedImage[7];
+			BufferedImage[] idleRight = new BufferedImage[7];
 			for (int i = 1; i <= 7; i++) {
-				idle[i-1] = ImageUtils.resizeImage(ImageIO.read(new File("assets/player_sprites/idle"+i+".png")), 96, 96);
+				idleRight[i-1] = ImageUtils.resizeImage(ImageIO.read(new File("assets/player_sprites/idle"+i+".png")), 96, 96);
+			}
+			
+			BufferedImage[] idleLeft = new BufferedImage[7];
+			for (int i = 1; i <= 7; i++) {
+				idleLeft[i - 1] = ImageUtils.flipImageHorizontally(ImageUtils
+						.resizeImage(ImageIO.read(new File("assets/player_sprites/idle" + i + ".png")), 96, 96));
 			}
 			
 			BufferedImage[] runRight = new BufferedImage[6];
@@ -133,13 +166,14 @@ public class Player  {
 				westAtk[i - 1] = ImageUtils.flipImageHorizontally(ImageUtils.resizeImage(ImageIO.read
 						(new File("assets/player_sprites/eastAtk"+i+".png")), 96, 96));
 			
-			sprites.put(States.IDLE, idle); 
+			sprites.put(States.IDLE_RIGHT, idleRight); 
+			sprites.put(States.IDLE_LEFT, idleLeft);
 			sprites.put(States.RUN_RIGHT, runRight);
 			sprites.put(States.RUN_LEFT, runLeft);
 			sprites.put(States.ATK_NORTH, northAtk);
 			sprites.put(States.ATK_EAST, eastAtk);
 			sprites.put(States.ATK_SOUTH, southAtk);
-			sprites.put(States.ATK_WEST, westAtk);			
+			sprites.put(States.ATK_WEST, westAtk);		
 			
 			
 		}
@@ -147,6 +181,15 @@ public class Player  {
 			e.printStackTrace(); 
 		}
 		
+	}
+	
+	public Boolean attackCheck(Boss boss) {
+		if (this.getX() + this.getAttackRange() >= boss.getX() && this.getX() - this.getAttackRange() <= boss.getX()
+				&& this.getY() + this.getAttackRange() >= boss.getY()
+				&& this.getY() - this.getAttackRange() <= boss.getY()) {
+			return true;
+		}
+		return false;
 	}
 	
 	
@@ -161,7 +204,7 @@ public class Player  {
 		case WEST:
 			return States.ATK_WEST;
 		default:
-			return States.IDLE;
+			return States.IDLE_RIGHT;
 		}
 	}
 	
@@ -176,17 +219,30 @@ public class Player  {
 	 	 * is how many actual frames run, and then every animationSpeed frames, we increment the frame count for that state
 		 */
 		switch (state) {
-		case IDLE:  
-			if (idleAnimationCount == animationSpeed) {
-				idleFrameCount++;
-				idleAnimationCount = 1;
+		case IDLE_RIGHT:  
+			if (idleRightFrameCount == animationSpeed) {
+				idleRightFrameCount++;
+				idleRightAnimationCount = 1;
 			}
 			
-			idleAnimationCount++;
+			idleRightAnimationCount++;
 				
-			if (idleFrameCount == 8)
-				idleFrameCount = 1;
-			return getIdleSprite(idleFrameCount - 1);
+			if (idleRightFrameCount == 8)
+				idleRightFrameCount = 1;
+			return getIdleRightSprite(idleRightFrameCount - 1);
+			
+		case IDLE_LEFT: 
+			if (idleLeftAnimationCount == animationSpeed) {
+				idleLeftFrameCount++;
+				idleLeftAnimationCount = 1;
+			}
+
+			idleLeftAnimationCount++;
+
+			if (idleLeftFrameCount == 8)
+				idleLeftFrameCount = 1;
+			return getIdleLeftSprite(idleLeftFrameCount - 1);
+			
 		case RUN_RIGHT:
 			if (runRightAnimationCount == animationSpeed) {
 				runRightFrameCount++;
@@ -221,7 +277,10 @@ public class Player  {
 			
 			if (northAtkFrameCount == 7) {
 				northAtkFrameCount = 1;
-				this.setState(States.IDLE);
+				this.setState(States.IDLE_RIGHT);
+				finishAttack();
+				return getIdleRightSprite(1);
+
 			}
 			return getNorthAtkSprite(northAtkFrameCount - 1);
 			
@@ -235,7 +294,9 @@ public class Player  {
 			
 			if (eastAtkFrameCount == 7) {
 				eastAtkFrameCount = 1;
-				this.setState(States.IDLE);
+				this.setState(States.IDLE_RIGHT);
+				finishAttack();
+				return getIdleRightSprite(1);
 			}
 			return getEastAtkSprite(eastAtkFrameCount - 1);
 			
@@ -248,8 +309,11 @@ public class Player  {
 			southAnimationCount++;
 
 			if (southAtkFrameCount == 7) {
+				this.setState(States.IDLE_RIGHT);
 				southAtkFrameCount = 1;
-				this.setState(States.IDLE);
+				finishAttack();
+				return getIdleRightSprite(1);
+
 			}
 			return getSouthAtkSprite(southAtkFrameCount - 1);
 			
@@ -262,13 +326,16 @@ public class Player  {
 			westAnimationCount++;
 			
 			if (westAtkFrameCount == 7) {
+				this.setState(States.IDLE_LEFT);
 				westAtkFrameCount = 1;
-				this.setState(States.IDLE);
+				finishAttack();
+				return getIdleLeftSprite(1);
+
 			}
 			return getWestAtkSprite(westAtkFrameCount - 1);
 			
 		default:
-			return getIdleSprite(1);
+			return getIdleRightSprite(1);
 		}
 		
 	}
@@ -335,8 +402,12 @@ public class Player  {
 		this.state = state;
 	}
 
-	public BufferedImage getIdleSprite(int frameCt) {
-		return sprites.get(States.IDLE)[frameCt];
+	public BufferedImage getIdleRightSprite(int frameCt) {
+		return sprites.get(States.IDLE_RIGHT)[frameCt];
+	}
+	
+	public BufferedImage getIdleLeftSprite(int frameCt) {
+		return sprites.get(States.IDLE_LEFT)[frameCt];
 	}
 	
 	public BufferedImage getRunRightSprite(int frameCt) {
@@ -379,14 +450,22 @@ public class Player  {
 		this.dy = dy;
 	}
 	
-	public int getIdleFrameCount() {
-		return idleFrameCount;
+	public int getIdleRightFrameCount() {
+		return idleRightFrameCount;
 	}
 
-	public int getIdleAnimationCount() {
-		return idleAnimationCount;
+	public int getIdleRightAnimationCount() {
+		return idleRightAnimationCount;
 	}
 
+	public int getIdleLeftFrameCount() {
+		return idleLeftFrameCount;
+	}
+	
+	public int getIdleLeftAnimationCount() {
+		return idleLeftAnimationCount;
+	}
+	
 	public int getRunRightFrameCount() {
 		return runRightFrameCount;
 	}
@@ -445,5 +524,13 @@ public class Player  {
 
 	public void setLastDirectionMoved(Directions lastDirectionMoved) {
 		this.lastDirectionMoved = lastDirectionMoved;
+	}
+
+	public int getAttackRange() {
+		return attackRange;
+	}
+
+	public void setAttackRange(int attackRange) {
+		this.attackRange = attackRange;
 	}
 }
