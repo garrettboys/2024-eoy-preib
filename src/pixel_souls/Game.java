@@ -79,12 +79,13 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		}
 		
 
-		Graphics g2d = back.createGraphics();
+		Graphics g2d = back.createGraphics(); 
 
 		// CODE BELOW
 		world.mapRenderUnder(g2d);
 		entityRender(g2d);
 		world.mapRenderOver(g2d);
+		guiRender(g2d);
 		// CODE ABOVE
 
 		
@@ -96,17 +97,21 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		player.update(deltaTime);
 		g.drawImage(player.getCurrentSprite(), player.getX(), player.getY(), null);
 		g.setColor(Color.RED);
-		g.fillRect(boss.getX(), boss.getY(), boss.getWidth(), boss.getHeight());
+		g.drawImage(boss.getCurrentSprite(), boss.getX(), boss.getY(), null); 
 		g.setColor(Color.WHITE);
 	}
 	
-
+	public void guiRender(Graphics g) {
+		g.setColor(Color.WHITE);
+		g.drawString("Health: " + player.getHealth(), 10, 20);
+		g.drawString("Boss Health: " + boss.getHealth(), 10, 40);
+	}
 	
 	
 	
 	
 	public void keyTyped(KeyEvent e) {
-	
+			
 	}
 
 	public void keyPressed(KeyEvent e) {
@@ -134,6 +139,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	        player.setState(Player.States.RUN_LEFT);
 	        player.setDx(-player.getSpeed());
 	        player.setLastDirectionMoved(Player.Directions.WEST);
+	        
 	    } else if (pressedKeys.contains(KeyEvent.VK_D)) {
 	        player.setState(Player.States.RUN_RIGHT);
 	        player.setDx(player.getSpeed());
@@ -142,9 +148,13 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 
 	    if (pressedKeys.contains(KeyEvent.VK_W)) {
 	        player.setDy(-player.getSpeed());
+	        player.setLastDirectionMoved(Player.Directions.NORTH);
+	        
 	    } else if (pressedKeys.contains(KeyEvent.VK_S)) {
 	        player.setDy(player.getSpeed());
+	        player.setLastDirectionMoved(Player.Directions.SOUTH);
 	    }
+	    
 	    if (!hasHorizontalInput && hasVerticalInput) {
 	        player.setState(player.getLastDirectionMoved() == Player.Directions.WEST ? Player.States.RUN_LEFT : Player.States.RUN_RIGHT);
 	    }

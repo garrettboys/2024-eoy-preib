@@ -187,6 +187,7 @@ public class Player  {
 		if (this.getX() + this.getAttackRange() >= boss.getX() && this.getX() - this.getAttackRange() <= boss.getX()
 				&& this.getY() + this.getAttackRange() >= boss.getY()
 				&& this.getY() - this.getAttackRange() <= boss.getY()) {
+			boss.setHealth(boss.getHealth() - 10);
 			return true;
 		}
 		return false;
