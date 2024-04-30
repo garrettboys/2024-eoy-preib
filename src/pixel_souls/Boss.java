@@ -1,4 +1,5 @@
 package pixel_souls;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
@@ -32,18 +33,124 @@ public class Boss { // screw inheritance
     private int animationSpeed = 5; // 5 frames per animation frame
     private States state = States.IDLE_RIGHT; // default state
 
-	
+	// below for boss ai handling
+    private AIStates aiState = AIStates.IDLING; // default ai state
+    private double distanceToPlayer;
+    private double throwingThreshold = 50; // distance(px) at which the boss starts throwing
+    private double retreatThreshold = 30; // distance(px) at which the boss starts retreating due to low health or other conditions
+
+    private long lastAttackTime = 0; 
+    private static final long ATTACK_COOLDOWN = 3000; //cd in milliseconds (3 seconds)
+    
+    private Rectangle hitbox;
+    
 	public enum States {
 		IDLE_RIGHT, IDLE_LEFT, THROWING_RIGHT, THROWING_LEFT, RUN_RIGHT, RUN_LEFT
 	}
     
+	public enum AIStates {
+		IDLING, CHASING, THROWING, RETREATING
+	}
 	public Boss() {
 		x = 640;
 		y = 288;
-		width = 32;
-		height = 32;
+		dx = 0; 
+		dy = 0;
+		width = 96;
+		height = 96;
 		health = 1000;
 		setSprites(sprites);
+		setHitbox(new Rectangle((int)x, (int)y, width, height));
+	}
+	
+
+	    // Determine the state transitions
+	    public void updateAI(int playerDistance, int playerHealth) {
+	        switch (aiState) {
+	            case IDLING:
+	                // transition from IDLING to CHASING if player is detected within a certain range
+	                if (playerDistance < 500) { // arbitrary distance for detection
+	                    aiState = AIStates.CHASING;
+	                }
+	                break;
+	            
+	            case CHASING:
+	                // transition to THROWING if within throwing range and can attack
+	                if (playerDistance < 300 && canAttack()) { // closer distance for throwing
+	                    aiState = AIStates.THROWING;
+	                } else if (playerDistance >= 500) { // if player moves out of chase range
+	                    aiState = AIStates.IDLING;
+	                }
+	                break;
+	            
+	            case THROWING:
+	                // assume the attack is performed here, and then transition to RETREATING
+	                if (canAttack()) {
+	                    performThrow();
+	                    aiState = AIStates.RETREATING;
+	                } else {
+	                    // if the boss can't attack, probably due to cooldown, keep chasing
+	                    aiState = AIStates.CHASING;
+	                }
+	                break;
+	            
+	            case RETREATING:
+	                // transition back to CHASING after increasing the distance
+	                if (playerDistance > 400) { // increased distance before stopping retreat
+	                    aiState = AIStates.CHASING;
+	                }
+	                break;
+	        }
+	    }
+	    
+	    public boolean canAttack() {
+	        long currentTime = System.currentTimeMillis();
+	        if (currentTime - lastAttackTime >= ATTACK_COOLDOWN) {
+	            lastAttackTime = currentTime; // reset
+	            return true;
+	        }
+	        return false;
+	    }
+
+
+	private void performIdle() {
+		if (lastMoveRight) {
+			state = States.IDLE_RIGHT;
+		} else {
+			state = States.IDLE_LEFT;
+		}
+	}
+	
+	private void performChase() {
+		if (x < 640) {
+			dx = 1;
+			lastMoveRight = true;
+			state = States.RUN_RIGHT;
+		} else {
+			dx = -1;
+			lastMoveRight = false;
+			state = States.RUN_LEFT;
+		}
+	}
+	
+	private void performThrow() {
+		if (lastMoveRight) {
+			state = States.THROWING_RIGHT;
+		} else {
+			state = States.THROWING_LEFT;
+		}
+	}
+	
+	private void performRetreat() {
+		if (x < 640) {
+			dx = -1;
+			lastMoveRight = false;
+			state = States.RUN_LEFT;
+		} else {
+			dx = 1;
+			lastMoveRight = true;
+			state = States.RUN_RIGHT;
+		}
 	}
 	
 	public void setSprites(Map<States, BufferedImage[]> sprites) {
@@ -148,6 +255,7 @@ public class Boss { // screw inheritance
 	        return getIdleRightSprite(1);
 	    }
 	}
+	
 
 	public BufferedImage getIdleRightSprite(int frameCt) {
 	    return sprites.get(States.IDLE_RIGHT)[frameCt];
@@ -171,6 +279,31 @@ public class Boss { // screw inheritance
 
 	public BufferedImage getThrowingLeftSprite(int frameCt) {
 	    return sprites.get(States.THROWING_LEFT)[frameCt];
+	}
+
+    
+    public int getAnimationSpeed() {
+		return animationSpeed;
+	}
+
+	public void setAnimationSpeed(int animationSpeed) {
+		this.animationSpeed = animationSpeed;
+	}
+
+	public AIStates getAiState() {
+		return aiState;
+	}
+
+	public void setAiState(AIStates aiState) {
+		this.aiState = aiState;
+	}
+
+	public double getDistanceToPlayer() {
+		return distanceToPlayer;
+	}
+
+	public void setDistanceToPlayer(double distanceToPlayer) {
+		this.distanceToPlayer = distanceToPlayer;
 	}
 
 	
@@ -244,6 +377,16 @@ public class Boss { // screw inheritance
 
 	public void setLastMoveRight(Boolean lastMoveRight) {
 		this.lastMoveRight = lastMoveRight;
+	}
+
+
+	public Rectangle getHitbox() {
+		return hitbox;
+	}
+
+
+	public void setHitbox(Rectangle hitbox) {
+		this.hitbox = hitbox;
 	}
 	
 

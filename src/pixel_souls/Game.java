@@ -99,6 +99,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		g.setColor(Color.RED);
 		g.drawImage(boss.getCurrentSprite(), boss.getX(), boss.getY(), null); 
 		g.setColor(Color.WHITE);
+		boss.updateAI(playerDistance(), player.getHealth());
 	}
 	
 	public void guiRender(Graphics g) {
@@ -107,6 +108,9 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		g.drawString("Boss Health: " + boss.getHealth(), 10, 40);
 	}
 	
+	public int playerDistance() {
+		return (int) Math.sqrt(Math.pow(player.getX() - boss.getX(), 2) + Math.pow(player.getY() - boss.getY(), 2));
+	}
 	
 	
 	

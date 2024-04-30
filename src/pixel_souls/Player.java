@@ -1,5 +1,6 @@
 package pixel_souls;
 
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
@@ -183,14 +184,21 @@ public class Player  {
 		
 	}
 	
-	public Boolean attackCheck(Boss boss) {
-		if (this.getX() + this.getAttackRange() >= boss.getX() && this.getX() - this.getAttackRange() <= boss.getX()
-				&& this.getY() + this.getAttackRange() >= boss.getY()
-				&& this.getY() - this.getAttackRange() <= boss.getY()) {
-			boss.setHealth(boss.getHealth() - 10);
-			return true;
-		}
-		return false;
+	public boolean attackCheck(Boss boss) {
+	    // uses rectangles because the collision formula is annoying and i want to use .intersects
+	    Rectangle attackArea = new Rectangle(
+	        this.getX() - this.getAttackRange(), 
+	        this.getY() - this.getAttackRange(), 
+	        this.getAttackRange() * 2, 
+	        this.getAttackRange() * 2
+	    );
+
+	  
+	    if (attackArea.intersects(boss.getHitbox())) {
+	        boss.setHealth(boss.getHealth() - 10);
+	        return true;
+	    }
+	    return false;
 	}
 	
 	
