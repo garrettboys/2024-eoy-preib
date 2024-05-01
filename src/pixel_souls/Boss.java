@@ -1,4 +1,5 @@
 package pixel_souls;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -42,6 +43,9 @@ public class Boss { // screw inheritance
     private long lastAttackTime = 0; 
     private static final long ATTACK_COOLDOWN = 3000; //cd in milliseconds (3 seconds)
     
+    private boolean isFlashingRed = false;
+    private int redFlashFramesRemaining = 0;
+    
     private Rectangle hitbox;
     
 	public enum States {
@@ -49,8 +53,9 @@ public class Boss { // screw inheritance
 	}
     
 	public enum AIStates {
-		IDLING, CHASING, THROWING, RETREATING
+		IDLING, CHASING, THROWING, RETREATING, ATTACKING_NOW
 	}
+	
 	public Boss() {
 		x = 640;
 		y = 288;
@@ -58,52 +63,13 @@ public class Boss { // screw inheritance
 		dy = 0;
 		width = 96;
 		height = 96;
-		health = 1000;
+		health = 500;
 		setSprites(sprites);
 		setHitbox(new Rectangle((int)x, (int)y, width, height));
 	}
-	
 
-	    // Determine the state transitions
-	    public void updateAI(int playerDistance, int playerHealth) {
-	        switch (aiState) {
-	            case IDLING:
-	                // transition from IDLING to CHASING if player is detected within a certain range
-	                if (playerDistance < 500) { // arbitrary distance for detection
-	                    aiState = AIStates.CHASING;
-	                }
-	                break;
-	            
-	            case CHASING:
-	                // transition to THROWING if within throwing range and can attack
-	                if (playerDistance < 300 && canAttack()) { // closer distance for throwing
-	                    aiState = AIStates.THROWING;
-	                } else if (playerDistance >= 500) { // if player moves out of chase range
-	                    aiState = AIStates.IDLING;
-	                }
-	                break;
-	            
-	            case THROWING:
-	                // assume the attack is performed here, and then transition to RETREATING
-	                if (canAttack()) {
-	                    performThrow();
-	                    aiState = AIStates.RETREATING;
-	                } else {
-	                    // if the boss can't attack, probably due to cooldown, keep chasing
-	                    aiState = AIStates.CHASING;
-	                }
-	                break;
-	            
-	            case RETREATING:
-	                // transition back to CHASING after increasing the distance
-	                if (playerDistance > 400) { // increased distance before stopping retreat
-	                    aiState = AIStates.CHASING;
-	                }
-	                break;
-	        }
-	    }
-	    
-	    public boolean canAttack() {
+
+	public boolean canAttack() {
 	        long currentTime = System.currentTimeMillis();
 	        if (currentTime - lastAttackTime >= ATTACK_COOLDOWN) {
 	            lastAttackTime = currentTime; // reset
@@ -112,46 +78,6 @@ public class Boss { // screw inheritance
 	        return false;
 	    }
 
-
-	private void performIdle() {
-		if (lastMoveRight) {
-			state = States.IDLE_RIGHT;
-		} else {
-			state = States.IDLE_LEFT;
-		}
-	}
-	
-	private void performChase() {
-		if (x < 640) {
-			dx = 1;
-			lastMoveRight = true;
-			state = States.RUN_RIGHT;
-		} else {
-			dx = -1;
-			lastMoveRight = false;
-			state = States.RUN_LEFT;
-		}
-	}
-	
-	private void performThrow() {
-		if (lastMoveRight) {
-			state = States.THROWING_RIGHT;
-		} else {
-			state = States.THROWING_LEFT;
-		}
-	}
-	
-	private void performRetreat() {
-		if (x < 640) {
-			dx = -1;
-			lastMoveRight = false;
-			state = States.RUN_LEFT;
-		} else {
-			dx = 1;
-			lastMoveRight = true;
-			state = States.RUN_RIGHT;
-		}
-	}
 	
 	public void setSprites(Map<States, BufferedImage[]> sprites) {
 		try {
@@ -202,6 +128,8 @@ public class Boss { // screw inheritance
 	}
 
 	public BufferedImage getCurrentSprite() {
+		if (isFlashingRed && redFlashFramesRemaining == 0) 
+            isFlashingRed = false;
 	    switch (state) {
 	    case IDLE_RIGHT:  
 	        if (++idleRightAnimationCount == animationSpeed) {
@@ -220,21 +148,21 @@ public class Boss { // screw inheritance
 	    case RUN_RIGHT:
 	        if (++runRightAnimationCount == animationSpeed) {
 	            runRightAnimationCount = 0;
-	            runRightFrameCount = (runRightFrameCount % 7) + 1;
+	            runRightFrameCount = (runRightFrameCount % 6) + 1;
 	        }
 	        return getRunRightSprite(runRightFrameCount - 1);
 	        
 	    case RUN_LEFT:
 	        if (++runLeftAnimationCount == animationSpeed) {
 	            runLeftAnimationCount = 0;
-	            runLeftFrameCount = (runLeftFrameCount % 7) + 1;
+	            runLeftFrameCount = (runLeftFrameCount % 6) + 1;
 	        }
 	        return getRunLeftSprite(runLeftFrameCount - 1);
 	        
 	    case THROWING_RIGHT:
 	        if (++throwingRightAnimationCount == animationSpeed) {
 	            throwingRightAnimationCount = 0;
-	            throwingRightFrameCount = (throwingRightFrameCount % 5) + 1; // Assuming 5 frames for throwing animation
+	            throwingRightFrameCount = (throwingRightFrameCount % 7) + 1; // Assuming 5 frames for throwing animation
 	            if (throwingRightFrameCount == 1) {
 	                this.setState(States.IDLE_RIGHT);
 	            }
@@ -258,27 +186,64 @@ public class Boss { // screw inheritance
 	
 
 	public BufferedImage getIdleRightSprite(int frameCt) {
+		if (!isFlashingRed) 
 	    return sprites.get(States.IDLE_RIGHT)[frameCt];
+	    
+		else {
+			redFlashFramesRemaining--;
+			return ImageUtils.tintRed(sprites.get(States.IDLE_RIGHT)[frameCt]);
+		}
+			
 	}
 
 	public BufferedImage getIdleLeftSprite(int frameCt) {
+		if (!isFlashingRed)
 	    return sprites.get(States.IDLE_LEFT)[frameCt];
+		
+		else  {
+			redFlashFramesRemaining--;
+			return ImageUtils.tintRed(sprites.get(States.IDLE_LEFT)[frameCt]);
+		}
 	}
 
 	public BufferedImage getRunRightSprite(int frameCt) {
+		if (!isFlashingRed)
 	    return sprites.get(States.RUN_RIGHT)[frameCt];
+		
+		else {
+			redFlashFramesRemaining--;
+			return ImageUtils.tintRed(sprites.get(States.RUN_RIGHT)[frameCt]);
+		}
 	}
 
 	public BufferedImage getRunLeftSprite(int frameCt) {
+		if (!isFlashingRed)
 	    return sprites.get(States.RUN_LEFT)[frameCt];
+		
+		else {
+			redFlashFramesRemaining--;
+			return ImageUtils.tintRed(sprites.get(States.RUN_LEFT)[frameCt]);
+		}
 	}
 
 	public BufferedImage getThrowingRightSprite(int frameCt) {
+		if (!isFlashingRed)
 	    return sprites.get(States.THROWING_RIGHT)[frameCt];
+		
+		else {
+			redFlashFramesRemaining--;
+			return ImageUtils.tintRed(sprites.get(States.THROWING_RIGHT)[frameCt]);
+		}
 	}
 
 	public BufferedImage getThrowingLeftSprite(int frameCt) {
+		if (!isFlashingRed)
 	    return sprites.get(States.THROWING_LEFT)[frameCt];
+		
+		else {
+			redFlashFramesRemaining--;
+			return ImageUtils.tintRed(sprites.get(States.THROWING_LEFT)[frameCt]);
+		}
 	}
 
     
@@ -387,6 +352,31 @@ public class Boss { // screw inheritance
 
 	public void setHitbox(Rectangle hitbox) {
 		this.hitbox = hitbox;
+	}
+
+
+	public boolean isFlashingRed() {
+		return isFlashingRed;
+	}
+
+
+	public void setFlashingRed(boolean isFlashingRed) {
+		this.isFlashingRed = isFlashingRed;
+	}
+
+
+	public int getRedFlashFramesRemaining() {
+		return redFlashFramesRemaining;
+	}
+
+
+	public void setRedFlashFramesRemaining(int redFlashFramesRemaining) {
+		this.redFlashFramesRemaining = redFlashFramesRemaining;
+	}
+
+
+	public Point getPosition() {	
+		return new Point((int)x, (int)y);
 	}
 	
 

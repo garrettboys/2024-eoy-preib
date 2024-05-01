@@ -1,5 +1,6 @@
 package pixel_souls;
 
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -196,6 +197,8 @@ public class Player  {
 	  
 	    if (attackArea.intersects(boss.getHitbox())) {
 	        boss.setHealth(boss.getHealth() - 10);
+	        boss.setFlashingRed(true);
+	        boss.setRedFlashFramesRemaining(12);
 	        return true;
 	    }
 	    return false;
@@ -542,4 +545,9 @@ public class Player  {
 	public void setAttackRange(int attackRange) {
 		this.attackRange = attackRange;
 	}
+	
+	public Point getPosition() {	
+		return new Point((int)x, (int)y);
+	}
+	
 }

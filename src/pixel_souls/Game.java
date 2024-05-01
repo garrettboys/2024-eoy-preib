@@ -1,15 +1,19 @@
 package pixel_souls;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import java.awt.Point;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.swing.JPanel;
+
+import pixel_souls.Boss.AIStates;
 
 
 @SuppressWarnings("serial")
@@ -21,7 +25,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	private Boss boss;
 	private Set<Integer> pressedKeys;
 	private boolean isAttacking;
- 
+	private SoundPlayer soundPlayer;
 
 	// controlling frametiming below
 	final double TARGET_FRAME_TIME = 1000.0 / 60.0;  // 60 FPS
@@ -37,7 +41,9 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		boss = new Boss();
 		deltaTime = 0.0167f;
 		pressedKeys = new HashSet<>();
+		soundPlayer = new SoundPlayer();
 		isAttacking = false;
+		soundPlayer.playBackgroundMusic("assets/pixel_souls_boss.wav");
 		
 		player.setAttackCompletionListener(() -> {
 		    onAttackComplete();  // lambda function to call onAttackComplete in the Player class using listener interface
@@ -99,20 +105,88 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		g.setColor(Color.RED);
 		g.drawImage(boss.getCurrentSprite(), boss.getX(), boss.getY(), null); 
 		g.setColor(Color.WHITE);
-		boss.updateAI(playerDistance(), player.getHealth());
+		bossAICheck();
 	}
 	
 	public void guiRender(Graphics g) {
 		g.setColor(Color.WHITE);
-		g.drawString("Health: " + player.getHealth(), 10, 20);
-		g.drawString("Boss Health: " + boss.getHealth(), 10, 40);
+		g.drawRect(120, 50, 1000, 20);
+		g.setColor(Color.RED);
+		g.fillRect(120, 50, boss.getHealth()*2, 20);
+		g.setFont(new Font("Arial", Font.BOLD, 20));
+		g.drawString("PROSPECTOR GOBLIN", 120, 110);
 	}
 	
 	public int playerDistance() {
 		return (int) Math.sqrt(Math.pow(player.getX() - boss.getX(), 2) + Math.pow(player.getY() - boss.getY(), 2));
 	}
 	
-	
+
+	    public void bossAICheck() {
+	        // Constants for AI behavior
+	        final int attackDistance = 100; // The distance within which the boss can throw
+	        final int retreatDistance = 50; // The distance to maintain while retreating
+	        final int chaseDistance = 300; // Distance under which the boss will start chasing
+	        final double bossSpeed = 1.0; // Boss speed in pixels per frame
+
+	        // Get current positions of the boss and the player
+	        Point bossPosition = boss.getPosition();
+	        Point playerPosition = player.getPosition();
+
+	        // Calculate the distance between the boss and the player
+	        double distance = Math.sqrt(Math.pow(bossPosition.x - playerPosition.x, 2) + Math.pow(bossPosition.y - playerPosition.y, 2));
+
+	        // State transitions based on current state
+	        switch (boss.getAiState()) {
+	            case IDLING:
+	                // Transition from IDLING to CHASING or THROWING
+	                if (distance <= attackDistance && canAttack()) {
+	                    boss.setAiState(AIStates.THROWING);
+	                } else if (distance < chaseDistance) {
+	                    boss.setAiState(AIStates.CHASING);
+	                }
+	                break;
+
+	            case CHASING:
+	                // Update position to chase the player
+	                if (distance > attackDistance) {
+	                    double dx = playerPosition.x - bossPosition.x;
+	                    double dy = playerPosition.y - bossPosition.y;
+	                    double norm = Math.sqrt(dx * dx + dy * dy);
+	                    dx /= norm; // Normalize the difference
+	                    dy /= norm; // Normalize the difference
+
+	                    // Update boss position
+	                    boss.setX((int)(bossPosition.x + dx * bossSpeed));
+	                    boss.setY((int)(bossPosition.y + dy * bossSpeed));   
+	                    
+	                }
+
+	                // Transition from CHASING to THROWING or RETREATING
+	                if (distance <= attackDistance && canAttack()) {
+	                    boss.setAiState(AIStates.THROWING);
+	                } else if (distance > chaseDistance) {
+	                    boss.setAiState(AIStates.IDLING);
+	                }
+	                break;
+
+	            case THROWING:
+	                // After throwing, transition to RETREATING
+	                boss.setAiState(AIStates.RETREATING);
+	                break;
+
+	            case RETREATING:
+	                // Logic for RETREATING state here (not detailed in this snippet)
+	                break;
+
+	            default:
+	                // If state is undefined or unexpected, default to IDLING
+	                boss.setAiState(AIStates.IDLING);
+	                break;
+	        }
+	    }
+
+
 	
 	public void keyTyped(KeyEvent e) {
 			

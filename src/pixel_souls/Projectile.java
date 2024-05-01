@@ -1,6 +1,6 @@
 package pixel_souls;
 
-public class Projectile {
+public class Projectile { // for dynamite projectile physics, moves in 360 deg instead of 8 directions
 	private Vector position;
 	private Vector velocity;
 	

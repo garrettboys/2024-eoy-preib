@@ -1,6 +1,6 @@
 package pixel_souls;
 
-public class Vector {
+public class Vector { // simple vector class to handle thrown dynamite physics
 	private float x, y;
 	
 	public Vector(float x, float y) {
