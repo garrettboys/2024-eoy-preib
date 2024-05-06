@@ -16,7 +16,7 @@ public class Boss { // screw inheritance
     private int health;
     private int dx, dy;
     private Boolean lastMoveRight = true;
-    private Map<States, BufferedImage[]> sprites = new HashMap<>();
+    private Map<AnimationStates, BufferedImage[]> sprites = new HashMap<>();
     
     // hardcoded things because i dont want to write it twice:
     private int idleRightFrameCount = 1;
@@ -32,13 +32,11 @@ public class Boss { // screw inheritance
     private int throwingLeftFrameCount = 1;
     private int throwingLeftAnimationCount = 0;
     private int animationSpeed = 5; // 5 frames per animation frame
-    private States state = States.IDLE_RIGHT; // default state
+    private AnimationStates state = AnimationStates.IDLE_RIGHT; // default state
 
 	// below for boss ai handling
     private AIStates aiState = AIStates.IDLING; // default ai state
     private double distanceToPlayer;
-    private double throwingThreshold = 50; // distance(px) at which the boss starts throwing
-    private double retreatThreshold = 30; // distance(px) at which the boss starts retreating due to low health or other conditions
 
     private long lastAttackTime = 0; 
     private static final long ATTACK_COOLDOWN = 3000; //cd in milliseconds (3 seconds)
@@ -48,7 +46,23 @@ public class Boss { // screw inheritance
     
     private Rectangle hitbox;
     
-	public enum States {
+    private attackInitListener attackInitListener;
+    
+    public interface attackInitListener {
+    	void attack();
+    }
+    
+    public void setAttackInitListener(attackInitListener listener) {
+    	this.attackInitListener = listener;
+    }
+    
+	public void startAttack() {
+	    if (attackInitListener != null) {
+	        attackInitListener.attack();
+	    }
+	}
+    
+	public enum AnimationStates {
 		IDLE_RIGHT, IDLE_LEFT, THROWING_RIGHT, THROWING_LEFT, RUN_RIGHT, RUN_LEFT
 	}
     
@@ -57,8 +71,8 @@ public class Boss { // screw inheritance
 	}
 	
 	public Boss() {
-		x = 640;
-		y = 288;
+		x = 610;
+		y = 250;
 		dx = 0; 
 		dy = 0;
 		width = 96;
@@ -68,6 +82,7 @@ public class Boss { // screw inheritance
 		setHitbox(new Rectangle((int)x, (int)y, width, height));
 	}
 
+	
 
 	public boolean canAttack() {
 	        long currentTime = System.currentTimeMillis();
@@ -79,46 +94,46 @@ public class Boss { // screw inheritance
 	    }
 
 	
-	public void setSprites(Map<States, BufferedImage[]> sprites) {
+	public void setSprites(Map<AnimationStates, BufferedImage[]> sprites) {
 		try {
 			BufferedImage[] idleRight = new BufferedImage[7];
 			for (int i = 1; i <= 7; i++) {
 				idleRight[i-1] = ImageUtils
 						.resizeImage(ImageIO.read(new File("assets/boss_sprites/idle"+i+".png")), 96, 96);
 			}
-			sprites.put(States.IDLE_RIGHT, idleRight);
+			sprites.put(AnimationStates.IDLE_RIGHT, idleRight);
 			
 			BufferedImage[] idleLeft = new BufferedImage[7];
 			for (int i = 1; i <= 7; i++) {
 				idleLeft[i - 1] = ImageUtils.flipImageHorizontally(idleRight[i - 1]);
 			}
-			sprites.put(States.IDLE_LEFT, idleLeft);
+			sprites.put(AnimationStates.IDLE_LEFT, idleLeft);
 			
 			BufferedImage[] throwingRight = new BufferedImage[7];
 			for (int i = 1; i <= 7; i++) {
 				throwingRight[i - 1] = ImageUtils
 						.resizeImage(ImageIO.read(new File("assets/boss_sprites/throw" + i + ".png")), 96, 96);
 			}
-			sprites.put(States.THROWING_RIGHT, throwingRight);
+			sprites.put(AnimationStates.THROWING_RIGHT, throwingRight);
 			
 			BufferedImage[] throwingLeft = new BufferedImage[7];
 			for (int i = 1; i <= 7; i++) {
 				throwingLeft[i - 1] = ImageUtils.flipImageHorizontally(throwingRight[i - 1]);
 			}
-			sprites.put(States.THROWING_LEFT, throwingLeft);
+			sprites.put(AnimationStates.THROWING_LEFT, throwingLeft);
 			
 			BufferedImage[] runRight = new BufferedImage[6];
 			for (int i = 1; i <= 6; i++) {
 				runRight[i - 1] = ImageUtils.resizeImage(ImageIO.read(new File("assets/boss_sprites/run" + i + ".png")),
 						96, 96);
 			}
-			sprites.put(States.RUN_RIGHT, runRight);
+			sprites.put(AnimationStates.RUN_RIGHT, runRight);
 			
 			BufferedImage[] runLeft = new BufferedImage[6];
 			for (int i = 1; i <= 6; i++) {
 				runLeft[i - 1] = ImageUtils.flipImageHorizontally(runRight[i - 1]);
 			}
-			sprites.put(States.RUN_LEFT, runLeft);
+			sprites.put(AnimationStates.RUN_LEFT, runLeft);
 			
 			
 		}
@@ -127,7 +142,7 @@ public class Boss { // screw inheritance
 		}
 	}
 
-	public BufferedImage getCurrentSprite() {
+	public BufferedImage getCurrentSprite() { // attack logic contained in here
 		if (isFlashingRed && redFlashFramesRemaining == 0) 
             isFlashingRed = false;
 	    switch (state) {
@@ -141,7 +156,7 @@ public class Boss { // screw inheritance
 	    case IDLE_LEFT: 
 	        if (++idleLeftAnimationCount == animationSpeed) {
 	            idleLeftAnimationCount = 0;
-	            idleLeftFrameCount = (idleLeftFrameCount % 8) + 1;
+	            idleLeftFrameCount = (idleLeftFrameCount % 7) + 1;
 	        }
 	        return getIdleLeftSprite(idleLeftFrameCount - 1);
 	        
@@ -162,20 +177,26 @@ public class Boss { // screw inheritance
 	    case THROWING_RIGHT:
 	        if (++throwingRightAnimationCount == animationSpeed) {
 	            throwingRightAnimationCount = 0;
-	            throwingRightFrameCount = (throwingRightFrameCount % 7) + 1; // Assuming 5 frames for throwing animation
+	            throwingRightFrameCount = (throwingRightFrameCount % 7) + 1; 
 	            if (throwingRightFrameCount == 1) {
-	                this.setState(States.IDLE_RIGHT);
+	                this.setState(AnimationStates.IDLE_RIGHT);
 	            }
 	        }
+			if (throwingRightFrameCount == 5 && canAttack()) {
+				startAttack();
+			}
 	        return getThrowingRightSprite(throwingRightFrameCount - 1);
 	        
 	    case THROWING_LEFT:
 	        if (++throwingLeftAnimationCount == animationSpeed) {
 	            throwingLeftAnimationCount = 0;
-	            throwingLeftFrameCount = (throwingLeftFrameCount % 5) + 1; // Assuming 5 frames for throwing animation
+	            throwingLeftFrameCount = (throwingLeftFrameCount % 7) + 1; 
 	            if (throwingLeftFrameCount == 1) {
-	                this.setState(States.IDLE_LEFT);
+	                this.setState(AnimationStates.IDLE_LEFT);
 	            }
+	        }
+	        if (throwingLeftFrameCount == 5 && canAttack()) {
+                startAttack();
 	        }
 	        return getThrowingLeftSprite(throwingLeftFrameCount - 1);
 
@@ -187,62 +208,62 @@ public class Boss { // screw inheritance
 
 	public BufferedImage getIdleRightSprite(int frameCt) {
 		if (!isFlashingRed) 
-	    return sprites.get(States.IDLE_RIGHT)[frameCt];
+	    return sprites.get(AnimationStates.IDLE_RIGHT)[frameCt];
 	    
 		else {
 			redFlashFramesRemaining--;
-			return ImageUtils.tintRed(sprites.get(States.IDLE_RIGHT)[frameCt]);
+			return ImageUtils.tintRed(sprites.get(AnimationStates.IDLE_RIGHT)[frameCt]);
 		}
 			
 	}
 
 	public BufferedImage getIdleLeftSprite(int frameCt) {
 		if (!isFlashingRed)
-	    return sprites.get(States.IDLE_LEFT)[frameCt];
+	    return sprites.get(AnimationStates.IDLE_LEFT)[frameCt];
 		
 		else  {
 			redFlashFramesRemaining--;
-			return ImageUtils.tintRed(sprites.get(States.IDLE_LEFT)[frameCt]);
+			return ImageUtils.tintRed(sprites.get(AnimationStates.IDLE_LEFT)[frameCt]);
 		}
 	}
 
 	public BufferedImage getRunRightSprite(int frameCt) {
 		if (!isFlashingRed)
-	    return sprites.get(States.RUN_RIGHT)[frameCt];
+	    return sprites.get(AnimationStates.RUN_RIGHT)[frameCt];
 		
 		else {
 			redFlashFramesRemaining--;
-			return ImageUtils.tintRed(sprites.get(States.RUN_RIGHT)[frameCt]);
+			return ImageUtils.tintRed(sprites.get(AnimationStates.RUN_RIGHT)[frameCt]);
 		}
 	}
 
 	public BufferedImage getRunLeftSprite(int frameCt) {
 		if (!isFlashingRed)
-	    return sprites.get(States.RUN_LEFT)[frameCt];
+	    return sprites.get(AnimationStates.RUN_LEFT)[frameCt];
 		
 		else {
 			redFlashFramesRemaining--;
-			return ImageUtils.tintRed(sprites.get(States.RUN_LEFT)[frameCt]);
+			return ImageUtils.tintRed(sprites.get(AnimationStates.RUN_LEFT)[frameCt]);
 		}
 	}
 
 	public BufferedImage getThrowingRightSprite(int frameCt) {
 		if (!isFlashingRed)
-	    return sprites.get(States.THROWING_RIGHT)[frameCt];
+	    return sprites.get(AnimationStates.THROWING_RIGHT)[frameCt];
 		
 		else {
 			redFlashFramesRemaining--;
-			return ImageUtils.tintRed(sprites.get(States.THROWING_RIGHT)[frameCt]);
+			return ImageUtils.tintRed(sprites.get(AnimationStates.THROWING_RIGHT)[frameCt]);
 		}
 	}
 
 	public BufferedImage getThrowingLeftSprite(int frameCt) {
 		if (!isFlashingRed)
-	    return sprites.get(States.THROWING_LEFT)[frameCt];
+	    return sprites.get(AnimationStates.THROWING_LEFT)[frameCt];
 		
 		else {
 			redFlashFramesRemaining--;
-			return ImageUtils.tintRed(sprites.get(States.THROWING_LEFT)[frameCt]);
+			return ImageUtils.tintRed(sprites.get(AnimationStates.THROWING_LEFT)[frameCt]);
 		}
 	}
 
@@ -312,11 +333,11 @@ public class Boss { // screw inheritance
 		this.health = health;
 	}
 
-	public States getState() {
+	public AnimationStates getState() {
 		return state;
 	}
 
-	public void setState(States state) {
+	public void setState(AnimationStates state) {
 		this.state = state;
 	}
 
