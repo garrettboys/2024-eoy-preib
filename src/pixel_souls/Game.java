@@ -9,6 +9,7 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,6 +28,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	private Set<Integer> pressedKeys;
 	private boolean isAttacking;
 	private SoundPlayer soundPlayer;
+	private ArrayList<Projectile> projectiles;
 
 	// controlling frametiming below
 	final double TARGET_FRAME_TIME = 1000.0 / 60.0;  // 60 FPS
@@ -47,7 +49,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		soundPlayer.playBackgroundMusic("assets/pixel_souls_boss.wav");
 		
 		player.setAttackCompletionListener(() -> {
-		    onAttackComplete();  // lambda function to call onAttackComplete in the Player class using listener interface
+		    onAttackComplete();  
 		    // this is called when the player's attack animation is complete so it is not interrupted
 		});
 		
@@ -95,6 +97,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		// CODE BELOW
 		world.mapRenderUnder(g2d);
 		entityRender(g2d);
+		projectileRender(g2d);
 		world.mapRenderOver(g2d);
 		guiRender(g2d);
 		// CODE ABOVE
@@ -112,6 +115,12 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		boss.setHitbox(new Rectangle(boss.getX(), boss.getY(), 64, 64));
 		g.setColor(Color.WHITE);
 		//bossAICheck();
+	}
+	
+	public void projectileRender(Graphics g) {
+		for (Projectile projectile : projectiles) {
+			g.drawImage(projectile.getCurrentSprite(), (int)projectile.getPosition().getX(), (int)projectile.getPosition().getY(), null);)
+		}
 	}
 	
 	public void guiRender(Graphics g) {
@@ -163,7 +172,15 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	    } */
 
 	public void bossAttack() {
-		
+		projectiles.add(
+		new Projectile(boss.getX(), boss.getY(), getAttackVector(), 5.0f)
+				);
+	}
+	
+	public Vector getAttackVector() {
+		Vector AtkVector = Vector.direction(boss.getPosition(), player.getPosition());
+		AtkVector.normalize();
+		return AtkVector;
 	}
 	
 	
@@ -236,9 +253,6 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	    return !player.getState().name().startsWith("ATK");
 	}
 
-
-
-	
 	public void onAttackComplete() {
 	    isAttacking = false;
 	    updatePlayerState();  // re-evaluate state based on current keys

@@ -546,8 +546,8 @@ public class Player  {
 		this.attackRange = attackRange;
 	}
 	
-	public Point getPosition() {	
-		return new Point((int)x, (int)y);
+	public Vector getPosition() {	
+		return new Vector(x, y);
 	}
 	
 }

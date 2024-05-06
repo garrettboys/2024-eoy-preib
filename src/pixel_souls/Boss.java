@@ -48,6 +48,7 @@ public class Boss { // screw inheritance
     
     private attackInitListener attackInitListener;
     
+    
     public interface attackInitListener {
     	void attack();
     }
@@ -396,13 +397,8 @@ public class Boss { // screw inheritance
 	}
 
 
-	public Point getPosition() {	
-		return new Point((int)x, (int)y);
+	public Vector getPosition() {	
+		return new Vector(x, y);
 	}
-	
-
-	
-	
-	
 
 }
