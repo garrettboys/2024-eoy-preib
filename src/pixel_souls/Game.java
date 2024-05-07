@@ -4,22 +4,22 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.JPanel;
 
-import pixel_souls.Boss.AIStates;
-
 
 @SuppressWarnings("serial")
-public class Game  extends JPanel implements Runnable, KeyListener{ 
+public class Game  extends JPanel implements Runnable, KeyListener, MouseListener{ 
 	
 	private BufferedImage back; 
 	private World world;
@@ -39,6 +39,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	public Game() {
 		new Thread(this).start();	
 		this.addKeyListener(this);
+		this.addMouseListener(this);
 		world = new World();
 		player = new Player(640, 576, 64, 64);
 		boss = new Boss();
@@ -46,7 +47,8 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		pressedKeys = new HashSet<>();
 		soundPlayer = new SoundPlayer();
 		isAttacking = false;
-		soundPlayer.playBackgroundMusic("assets/pixel_souls_boss.wav");
+		soundPlayer.playMusic("assets/pixel_souls_boss.wav");
+		projectiles = new ArrayList<Projectile>();
 		
 		player.setAttackCompletionListener(() -> {
 		    onAttackComplete();  
@@ -98,13 +100,37 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		world.mapRenderUnder(g2d);
 		entityRender(g2d);
 		projectileRender(g2d);
+		hitboxUpdate();
 		world.mapRenderOver(g2d);
+		boomCheck();
 		guiRender(g2d);
+
 		// CODE ABOVE
 
 		
 		twoDgraph.drawImage(back, null, 0, 0);
 
+	}
+	
+	public void hitboxUpdate() {
+		player.setHitbox(new Rectangle(player.getX(), player.getY(), player.getWidth(), player.getHeight()));
+		boss.setHitbox(new Rectangle(boss.getX(), boss.getY(), player.getWidth(), player.getHeight()));
+		for (Projectile projectile : projectiles) {
+			projectile.setHitbox(new Rectangle((int) projectile.getPosition().getX(),
+					(int) projectile.getPosition().getY(), projectile.getWidth(), projectile.getHeight()));
+		}
+	}
+	
+	public void boomCheck() {
+		List<Projectile> toRemove = new ArrayList<>();
+		for (Projectile projectile : projectiles) {
+			if (projectile.getHitbox().intersects(player.getHitbox())) {
+				toRemove.add(projectile);
+				player.setHealth(player.getHealth() - 10);
+				System.out.println("Player health: " + player.getHealth());
+			}
+		}
+		projectiles.removeAll(toRemove);
 	}
 	
 	public void entityRender(Graphics g) {
@@ -119,7 +145,8 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	
 	public void projectileRender(Graphics g) {
 		for (Projectile projectile : projectiles) {
-			g.drawImage(projectile.getCurrentSprite(), (int)projectile.getPosition().getX(), (int)projectile.getPosition().getY(), null);)
+			projectile.update();
+			g.drawImage(projectile.getCurrentSprite(), (int)projectile.getPosition().getX(), (int)projectile.getPosition().getY(), null);
 		}
 	}
 	
@@ -183,6 +210,7 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 		return AtkVector;
 	}
 	
+
 	
 	public void keyTyped(KeyEvent e) {
 			
@@ -191,6 +219,10 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	public void keyPressed(KeyEvent e) {
 	    pressedKeys.add(e.getKeyCode());
 	    updatePlayerState();
+	    
+		if (e.getKeyCode() == KeyEvent.VK_T) { // boss attack test
+			bossAttack();
+		}
 	}
 	
 	public void keyReleased(KeyEvent e) {
@@ -256,6 +288,33 @@ public class Game  extends JPanel implements Runnable, KeyListener{
 	public void onAttackComplete() {
 	    isAttacking = false;
 	    updatePlayerState();  // re-evaluate state based on current keys
+	}
+
+	
+	@Override
+	public void mouseClicked(MouseEvent e) {
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {	
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
 	}
 
 

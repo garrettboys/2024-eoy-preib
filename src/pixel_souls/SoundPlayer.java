@@ -1,21 +1,49 @@
 package pixel_souls;
-import java.io.*;
 
 import javax.sound.sampled.*;
+import java.io.*;
 
 public class SoundPlayer {
-    public void playBackgroundMusic(String filePath) {
+
+    private Clip musicClip; 
+
+    public void playMusic(String musicFile) {
+        if (musicClip != null && musicClip.isOpen()) {
+            musicClip.stop(); 
+            musicClip.close(); 
+        }
+        musicClip = loadClip(musicFile);
+        if (musicClip != null) {
+            musicClip.loop(Clip.LOOP_CONTINUOUSLY); 
+            musicClip.start();
+        }
+    }
+
+    public void stopMusic() {
+        if (musicClip != null) {
+            musicClip.stop();
+            musicClip.close();
+        }
+    }
+
+    public void playSoundEffect(String soundFile) {
+        Clip soundClip = loadClip(soundFile);
+        if (soundClip != null) {
+            soundClip.start();  
+        }
+    }
+
+    private Clip loadClip(String filePath) {
+        File soundFile = new File(filePath);
         try {
-            // Open an audio input stream.
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File(filePath));
-            // Get a sound clip resource.
+            AudioInputStream inputStream = AudioSystem.getAudioInputStream(soundFile);
             Clip clip = AudioSystem.getClip();
-            // Open audio clip and load samples from the audio input stream.
-            clip.open(audioIn);
-            // Loop the clip
-            clip.loop(Clip.LOOP_CONTINUOUSLY);
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
-            e.printStackTrace();
+            clip.open(inputStream);
+            return clip;
+        } catch (Exception e) {
+            System.out.println("Could not load sound file: " + filePath);
+            System.out.println("Error: " + e);
+            return null;
         }
     }
 }

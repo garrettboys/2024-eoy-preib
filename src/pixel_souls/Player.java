@@ -1,6 +1,5 @@
 package pixel_souls;
 
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -22,6 +21,7 @@ public class Player  {
 	private States state;
 	private Directions lastDirectionMoved = Directions.EAST;
 	private int attackRange;
+	private Rectangle hitbox;
 	
 	private Map<States, BufferedImage[]> sprites = new HashMap<>();
 	// see getCurrentPlayerSprite() in Game for below variables
@@ -93,6 +93,7 @@ public class Player  {
 		this.southAnimationCount = 1;
 		this.westAnimationCount = 1;
 		this.animationSpeed = 5; // 5 real frames to 1 animation frame
+		this.hitbox = new Rectangle((int)x, (int)y, 30, 40);
 		this.setAttackRange(32);
 		setSprites();
 	}
@@ -549,5 +550,14 @@ public class Player  {
 	public Vector getPosition() {	
 		return new Vector(x, y);
 	}
+
+	public void setHitbox(Rectangle rectangle) {
+		this.hitbox = rectangle;
+		
+	}
 	
+	public Rectangle getHitbox() {
+		return hitbox;
+	}
+	 
 }
