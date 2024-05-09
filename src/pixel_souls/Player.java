@@ -39,6 +39,10 @@ public class Player  {
 	private int westAtkFrameCount, westAnimationCount;
 	private int animationSpeed;
 	
+	private int invincibilityMs;
+	private boolean isInvincible;
+	private long invincibilityStartTime;
+	
 	// below interface is used to notify the game that the player has finished attacking and can now move again
 	
 	public interface AttackCompletionListener {
@@ -46,6 +50,7 @@ public class Player  {
 	}
 	
 	private AttackCompletionListener attackCompletionListener;
+	
 	
 	public void setAttackCompletionListener(AttackCompletionListener listener) {
 	    this.attackCompletionListener = listener;
@@ -64,9 +69,9 @@ public class Player  {
 	public enum Directions {
 		NORTH, EAST, SOUTH, WEST
 	}
-	
+	// didn't need all the "this." but its good practice
 	public Player(int x, int y) {
-		this.x = x;
+		this.x = x; 
 		this.y = y;
 		this.dx = 0;
 		this.dy = 0;
@@ -95,6 +100,9 @@ public class Player  {
 		this.animationSpeed = 5; // 5 real frames to 1 animation frame
 		this.hitbox = new Rectangle((int)x, (int)y, 30, 40);
 		this.setAttackRange(32);
+		this.invincibilityMs = 750;
+		this.isInvincible = false;
+		this.invincibilityStartTime = 0;
 		setSprites();
 	}
 	
@@ -126,6 +134,9 @@ public class Player  {
 		this.westAnimationCount = 1;
 		this.animationSpeed = 5; // 5 real frames to 1 animation frame
 		this.setAttackRange(32);
+		this.invincibilityMs= 750;
+		this.isInvincible = false;
+		this.invincibilityStartTime = 0;
 		setSprites();
 		
 	}
@@ -357,6 +368,23 @@ public class Player  {
 		return sprites;
 	}
 	
+	public void startInvincibility() {
+	    if (!isInvincible) {
+	        isInvincible = true;
+	        setInvincibilityStartTime(System.currentTimeMillis());  
+	    }
+	}
+	
+	public void updateInvincibility() {
+	    if (isInvincible) {
+	      
+	        long currentTime = System.currentTimeMillis();
+	        if (currentTime - invincibilityStartTime >= invincibilityMs) {
+	            // If the invincibility period has elapsed, make the player vulnerable again
+	            isInvincible = false;
+	        }
+	    }
+	}
 	public int getX() {
 		return (int)x;
 	}
@@ -558,6 +586,30 @@ public class Player  {
 	
 	public Rectangle getHitbox() {
 		return hitbox;
+	}
+
+	public int getInvincibilityMs() {
+		return invincibilityMs;
+	}
+
+	public void setInvincibilityMs(int invincibilityMs) {
+		this.invincibilityMs = invincibilityMs;
+	}
+
+	public boolean isInvincible() {
+		return isInvincible;
+	}
+
+	public void setInvincible(boolean isInvincible) {
+		this.isInvincible = isInvincible;
+	}
+
+	public long getInvincibilityStartTime() {
+		return invincibilityStartTime;
+	}
+
+	public void setInvincibilityStartTime(long invincibilityStartTime) {
+		this.invincibilityStartTime = invincibilityStartTime;
 	}
 	 
 }
