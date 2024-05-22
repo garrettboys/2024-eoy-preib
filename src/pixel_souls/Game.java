@@ -2,6 +2,7 @@ package pixel_souls;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -11,12 +12,17 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 
@@ -32,13 +38,32 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 	private SoundPlayer soundPlayer;
 	private ArrayList<Projectile> projectiles;
     private List<Explosion> explosions;
-
+    private String gameState;
+    private ImageIcon titleScreen = new ImageIcon("assets/title_assets/bg.png");
+    private ImageIcon logo = new ImageIcon("assets/title_assets/logo.png");
+    private ImageIcon tab = new ImageIcon("assets/title_assets/tab.png");
+    private Boolean drawHitboxes = false;
+    
+    private Font font;
 
 	// controlling frametiming below
 	final double TARGET_FRAME_TIME = 1000.0 / 60.0;  // 60 FPS
 	private double deltaTime;
 	long lastTime = System.nanoTime(); 
 	final double NANO_TO_MILLI = 1000000.0;
+	
+	public void loadFont() {
+        try {
+            InputStream is = new FileInputStream("assets/title_assets/alagard.ttf");
+            font = Font.createFont(Font.TRUETYPE_FONT, is);
+        } catch (FileNotFoundException e) {
+            System.out.println("The font file was not found.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while reading the font file.");
+        } catch (FontFormatException e) {
+            System.out.println("The font file format is not supported.");
+        } 
+    }
 	
 	public Game() {
 		new Thread(this).start();	
@@ -51,18 +76,22 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		pressedKeys = new HashSet<>();
 		soundPlayer = new SoundPlayer();
 		isAttacking = false;
-		soundPlayer.playMusic("assets/pixel_souls_boss.wav");
+		soundPlayer.playMusic("assets/title_assets/titlebgm.wav");
+	// soundPlayer.playMusic("assets/pixel_souls_boss.wav"); put when game started
 		projectiles = new ArrayList<>();
 		explosions = new ArrayList<>();
+		gameState = "START";
+		loadFont();
 		
 		player.setAttackCompletionListener(() -> {
 		    onAttackComplete();  
-		    // this is called when the player's attack animation is complete so it is not interrupted
 		});
 		
 		boss.setAttackInitListener(() -> {
 			bossAttack();
 		});
+		
+		
 		
 	}
 	
@@ -73,7 +102,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 	   		while(true)
 	   		{ // designed to maintain a standard 60 fps for rendering
 	   		    long now = System.nanoTime();
-	   		    deltaTime = (now - lastTime) / NANO_TO_MILLI;  // 
+	   		    deltaTime = (now - lastTime) / NANO_TO_MILLI;  
 	   		    lastTime = now;
 
 	   		    repaint(); 
@@ -102,18 +131,34 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		Graphics g2d = back.createGraphics(); 
 
 		// CODE BELOW
+		switch (gameState) {
+		case "START": {
+			g2d.drawImage(titleScreen.getImage(), 0, 0, null);
+			g2d.drawImage(logo.getImage(), 300, 50, null);
+			g2d.drawImage(tab.getImage(), 425, 400, null);
+			g2d.setFont(font.deriveFont(Font.PLAIN, 30));
+			g2d.drawString("Press Space to Start", 520, 435);
+			break;
+			
+		}
+		case "GAME": {
+			player.updateInvincibility();
+			updateExplosions();
+			world.mapRenderUnder(g2d);
+			entityRender(g2d);
+			projectileRender(g2d);
+			hitboxUpdate();
+			world.mapRenderOver(g2d);
+			boomCheck();
+			drawExplosions(g2d);
+			guiRender(g2d);
+			if (drawHitboxes) 
+				drawHitboxes(g2d);
+	        break;	
+			}
+		}
 		
-		player.updateInvincibility();
-		updateExplosions();
-		world.mapRenderUnder(g2d);
-		entityRender(g2d);
-		projectileRender(g2d);
-		hitboxUpdate();
-		world.mapRenderOver(g2d);
-		boomCheck();
-		drawExplosions(g2d);
-		guiRender(g2d);
-		
+
 		// CODE ABOVE
 
 		
@@ -121,12 +166,25 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 
 	}
 	
-	public void hitboxUpdate() {
-		player.setHitbox(new Rectangle(player.getX(), player.getY(), player.getWidth(), player.getHeight()));
-		boss.setHitbox(new Rectangle(boss.getX(), boss.getY(), player.getWidth(), player.getHeight()));
+	public void drawHitboxes(Graphics g2d) {
+		Rectangle playerHitbox = player.getHitbox();
+		Rectangle bossHitbox = boss.getHitbox();
+		g2d.drawRect((int)bossHitbox.getX(), (int)bossHitbox.getY(), (int)bossHitbox.getWidth(), (int)bossHitbox.getHeight());
+		g2d.drawRect((int)playerHitbox.getX(), (int)playerHitbox.getY(), (int)playerHitbox.getWidth(), (int)playerHitbox.getHeight());
 		for (Projectile projectile : projectiles) {
-			projectile.setHitbox(new Rectangle((int) projectile.getPosition().getX(),
-					(int) projectile.getPosition().getY(), projectile.getWidth(), projectile.getHeight()));
+			Rectangle projectileHitbox = projectile.getHitbox();
+			g2d.drawRect((int) projectileHitbox.getX(), (int) projectileHitbox.getY(),
+					(int) projectileHitbox.getWidth(), (int) projectileHitbox.getHeight());
+		}
+	}
+	
+	public void hitboxUpdate() {
+		//constants added to fix x/y, width/height
+		player.setHitbox(new Rectangle(player.getX()+30, player.getY()+30, player.getWidth()-25, player.getHeight()-18));
+		boss.setHitbox(new Rectangle(boss.getX()+30, boss.getY()+30, boss.getWidth()-55, boss.getHeight()-55));
+		for (Projectile projectile : projectiles) {
+			projectile.setHitbox(new Rectangle((int) projectile.getPosition().getX()+40,
+					(int) projectile.getPosition().getY()+40, projectile.getWidth(), projectile.getHeight()));
 		}
 	}
 	
@@ -177,7 +235,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		g.setColor(Color.RED);
 		g.fillRect(120, 50, boss.getHealth()*2, 20);
 		g.fillRect(30, 625, player.getHealth()*5, 20);
-		g.setFont(new Font("Arial", Font.BOLD, 20));
+		g.setFont(font.deriveFont(Font.PLAIN, 20));
 		g.drawString("PROSPECTOR GOBLIN", 120, 110);
 		g.drawString(""+player.getHealth(), 30, 600);
 	}
@@ -235,6 +293,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
                 it.remove(); 
             }
         }
+        
     }
 
     
@@ -270,6 +329,17 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 	    
 		if (e.getKeyCode() == KeyEvent.VK_T) { // boss attack test
 			bossAttack();
+		}
+		
+		if (e.getKeyChar() == 'h')
+		    drawHitboxes = !drawHitboxes;
+		
+		if (e.getKeyChar() == ' ') {
+			if (gameState.equals("START")) {
+				gameState = "GAME";
+				soundPlayer.stopMusic();
+				soundPlayer.playMusic("assets/pixel_souls_boss.wav");
+			}
 		}
 	}
 	

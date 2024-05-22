@@ -38,7 +38,7 @@ public class Projectile { // for dynamite projectile physics, moves in 360 deg i
 	    direction.normalize();
 	    direction.scale(speed); 
 	    velocity = direction; 
-	    hitbox = new Rectangle((int)position.getX(), (int)position.getY(), width, height);
+	    hitbox = new Rectangle((int)position.getX()+100, (int)position.getY()+100, width, height);
 	}
 
 	public BufferedImage getCurrentSprite() {

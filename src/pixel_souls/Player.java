@@ -200,8 +200,8 @@ public class Player  {
 	public boolean attackCheck(Boss boss) {
 	    // uses rectangles because the collision formula is annoying and i want to use .intersects
 	    Rectangle attackArea = new Rectangle(
-	        this.getX() - this.getAttackRange(), 
-	        this.getY() - this.getAttackRange(), 
+	        (int)this.getHitbox().getX() - this.getAttackRange(), 
+	        (int)this.getHitbox().getY() - this.getAttackRange(), 
 	        this.getAttackRange() * 2, 
 	        this.getAttackRange() * 2
 	    );

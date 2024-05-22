@@ -6,8 +6,9 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry excluding="player_sprites/|boss_sprites/" kind="src" path="assets"/>
+	<classpathentry excluding="player_sprites/|boss_sprites/|title_assets/" kind="src" path="assets"/>
 	<classpathentry kind="src" path="assets/player_sprites"/>
 	<classpathentry kind="src" path="assets/boss_sprites"/>
+	<classpathentry kind="src" path="assets/title_assets"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
