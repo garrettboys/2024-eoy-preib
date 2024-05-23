@@ -100,7 +100,7 @@ public class Player  {
 		this.animationSpeed = 5; // 5 real frames to 1 animation frame
 		this.hitbox = new Rectangle((int)x, (int)y, 30, 40);
 		this.setAttackRange(32);
-		this.invincibilityMs = 750;
+		this.invincibilityMs = 100;
 		this.isInvincible = false;
 		this.invincibilityStartTime = 0;
 		setSprites();

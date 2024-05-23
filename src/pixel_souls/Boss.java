@@ -30,14 +30,19 @@ public class Boss { // screw inheritance
     private int throwingRightAnimationCount = 0;
     private int throwingLeftFrameCount = 1;
     private int throwingLeftAnimationCount = 0;
-    private int animationSpeed = 5; // 5 frames per animation frame
-    private AnimationStates state = AnimationStates.IDLE_RIGHT; // default state
+
+
+	private int animationSpeed = 5; // 5 frames per animation frame
+    private AnimationStates animState = AnimationStates.IDLE_RIGHT; // default state
 
 	// below for boss ai handling
     private AIStates aiState = AIStates.IDLING; // default ai state
     private double distanceToPlayer;
 
+    private AttackStates attackState = AttackStates.IDLE;
+    
     private long lastAttackTime = 0; 
+    private long attackDuration = 0;
     private static final long ATTACK_COOLDOWN = 3000; //cd in milliseconds (3 seconds)
     
     private boolean isFlashingRed = false;
@@ -67,7 +72,15 @@ public class Boss { // screw inheritance
 	}
     
 	public enum AIStates {
-		IDLING, CHASING, THROWING, RETREATING, ATTACKING_NOW
+		IDLING, CHASING, THROWING, RETREATING
+	}
+	
+	public enum AttackStates {
+		IDLE,
+		TAP, // like the boss is 'tapping' the attack key 5 times
+		BURST, // three, three round bursts of dynamite
+		ARMAGEDDON, // spams as much dynamite as possible for 5 seconds
+		BLOOM //  sends 360 things of dynamite for every degree outward from the boss
 	}
 	
 	public Boss() {
@@ -145,7 +158,7 @@ public class Boss { // screw inheritance
 	public BufferedImage getCurrentSprite() { // attack logic contained in here
 		if (isFlashingRed && redFlashFramesRemaining == 0) 
             isFlashingRed = false;
-	    switch (state) {
+	    switch (animState) {
 	    case IDLE_RIGHT:  
 	        if (++idleRightAnimationCount == animationSpeed) {
 	            idleRightAnimationCount = 0;
@@ -334,11 +347,11 @@ public class Boss { // screw inheritance
 	}
 
 	public AnimationStates getState() {
-		return state;
+		return animState;
 	}
 
 	public void setState(AnimationStates state) {
-		this.state = state;
+		this.animState = state;
 	}
 
 	public int getDx() {
@@ -400,4 +413,27 @@ public class Boss { // screw inheritance
 		return new Vector(x, y);
 	}
 
+    
+    public AttackStates getAttackState() {
+		return attackState;
+	}
+
+	public void setAttackState(AttackStates attackState) {
+		this.attackState = attackState;
+	}
+
+	public boolean isCooldown() {
+		if (System.currentTimeMillis() - lastAttackTime < ATTACK_COOLDOWN)
+			return true;
+		else
+			return false;
+	}
+
+	public long getAttackDuration() {
+		return attackDuration;
+	}
+
+	public void setAttackDuration(long attackDuration) {
+		this.attackDuration = attackDuration;
+	}
 }
