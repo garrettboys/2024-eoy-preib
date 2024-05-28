@@ -294,8 +294,9 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
         case IDLE: 
         //	if (!boss.isCooldown() && Math.random() > .90)
         	//	bossAttackSwitcheroo();
+        	break;
 		case ARMAGEDDON:
-			//bossArmaggedon();
+			bossArmageddon();
 			break;
 		case BLOOM:
 			bossBloom();
@@ -333,17 +334,10 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
         if (boss.getAttackDuration() == 0) {
             boss.setAttackDuration(System.currentTimeMillis());
         }
-
-        long currentTime = System.currentTimeMillis();
-        long attackDuration = currentTime - boss.getAttackDuration();
-
-        if (attackDuration >= 10) {
-            boss.setAttackDuration(currentTime);
-
+        long attackDuration = System.currentTimeMillis() - boss.getAttackDuration();
             
             Vector attackVector = getAttackVector();
             projectiles.add(new Projectile(boss.getX(), boss.getY(), attackVector, 3.0f));
-        }
 
         if (attackDuration > 2000) {
             boss.setAttackState(Boss.AttackStates.IDLE);
