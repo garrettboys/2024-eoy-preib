@@ -436,4 +436,8 @@ public class Boss { // screw inheritance
 	public void setAttackDuration(long attackDuration) {
 		this.attackDuration = attackDuration;
 	}
+
+	public void setLastAttackTime(long lastAttackTime) {
+		this.lastAttackTime = lastAttackTime;
+	}
 }

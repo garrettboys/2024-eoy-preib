@@ -42,12 +42,10 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
     private ImageIcon titleScreen = new ImageIcon("assets/title_assets/bg.png");
     private ImageIcon logo = new ImageIcon("assets/title_assets/logo.png");
     private ImageIcon tab = new ImageIcon("assets/title_assets/tab.png");
+	private ImageIcon gameOver = new ImageIcon("assets/over_assets/gameover.png");
     private Boolean drawHitboxes = false;
-    private Boolean attack1 = false;
-    private Boolean attack2 = false;
-    private Boolean attack3 = false;
-    private Boolean attack4 = false;
-    
+	private Boolean gameOverDebounce = false;
+
     private Font font;
 
 	// controlling frametiming below
@@ -161,6 +159,19 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			bossAttackLogic();
 	        break;	
 			}
+		case "OVER" : {
+			soundPlayer.stopMusic();
+			g2d.drawImage(gameOver.getImage(), 0, 0, null);
+			if (!gameOverDebounce) {
+			   soundPlayer.playSoundEffect("assets/baby_cry.wav");
+			   soundPlayer.playSoundEffect("assets/laugh.wav");
+			   soundPlayer.playSoundEffect("assets/sad_trombone.wav");
+			   gameOverDebounce = true;
+			}
+			g2d.setColor(Color.RED);
+			g2d.setFont(font.deriveFont(Font.PLAIN, 30));
+			g2d.drawString("there is no restart button. quit the game", 500, 500);
+			}
 		}
 		
 
@@ -201,20 +212,17 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 				if (player.isInvincible() == false) {
 					player.setHealth(player.getHealth() - 10);
 					player.startInvincibility();
-					addExplosion(new Point((int)projectile.getPosition().getX(), (int)projectile.getPosition().getY()));
+					addExplosion(new Point((int)projectile.getPosition().getX()+25, (int)projectile.getPosition().getY()+25));
 
 				}
 				if (player.getHealth() <= 0) {
-					System.out.println("Player is dead!");
+					gameState = "OVER";
 				}
 
 				}
 			}
 			projectiles.removeAll(toRemove);
 		}
-		
-
-	
 	
 	public void entityRender(Graphics g) {
 		player.update(deltaTime);
@@ -249,7 +257,6 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		return (int) Math.sqrt(Math.pow(player.getX() - boss.getX(), 2) + Math.pow(player.getY() - boss.getY(), 2));
 	}
 	
-
     public void bossAICheck() { 
 	        // constants for AI behavior
 
@@ -292,8 +299,8 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
     public void bossAttackLogic() {
         switch (boss.getAttackState()) {
         case IDLE: 
-        //	if (!boss.isCooldown() && Math.random() > .90)
-        	//	bossAttackSwitcheroo();
+        	if (!boss.isCooldown() && Math.random() > .90)
+        		bossAttackSwitcheroo();
         	break;
 		case ARMAGEDDON:
 			bossArmageddon();
@@ -301,11 +308,8 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		case BLOOM:
 			bossBloom();
 			break;
-		case BURST:
-			//bossBurst();
-			break;
 		case TAP:
-			//bossTap();
+		bossTap();
 			break;
 		default:
 			break;
@@ -326,7 +330,8 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			}
 	    if (attackDuration > 1000) {
 	        boss.setAttackState(Boss.AttackStates.IDLE);
-	        boss.setAttackDuration(0); // Reset the start time for the next attack
+	        boss.setAttackDuration(0); 
+			boss.setLastAttackTime(System.currentTimeMillis());
 	    }
     } 
     
@@ -342,28 +347,40 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
         if (attackDuration > 2000) {
             boss.setAttackState(Boss.AttackStates.IDLE);
             boss.setAttackDuration(0); 
+			boss.setLastAttackTime(System.currentTimeMillis());
         }
     }
 
-	         
+	public void bossTap() {
+		if (boss.getAttackDuration() == 0) {
+			boss.setAttackDuration(System.currentTimeMillis());
+		}
+		long attackDuration = System.currentTimeMillis() - boss.getAttackDuration();
+	
+		if (16 >= (attackDuration % 1000) && (attackDuration % 1000) >= 0) { 
+			Vector tapVector = getAttackVector();
+			projectiles.add(new Projectile(boss.getX(), boss.getY(), tapVector, 3.0f));
+		}
+	
+		if (attackDuration > 6000) { 
+			boss.setAttackState(Boss.AttackStates.IDLE);
+			boss.setAttackDuration(0); 
+			boss.setLastAttackTime(System.currentTimeMillis());
+		}
+	}
 
     public void bossAttackSwitcheroo() {
-    	if (Math.random() < .8) {
     		if (Math.random() < .5)
     			boss.setAttackState(Boss.AttackStates.TAP);
-    		else
-    			boss.setAttackState(Boss.AttackStates.BURST);
-    		}
-		else {
+    		
+			else {
 			if (Math.random() < .5)
-				boss.setAttackState(Boss.AttackStates.BLOOM);
+				boss.setAttackState(Boss.AttackStates.ARMAGEDDON);
 		    else
-		    	boss.setAttackState(Boss.AttackStates.ARMAGEDDON);
+		    	boss.setAttackState(Boss.AttackStates.BLOOM);
 		}
     }
     
-    
-
     public void addExplosion(Point position) {
         explosions.add(new Explosion(position, System.currentTimeMillis()));
     }
@@ -380,14 +397,12 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
         
     }
  
-
     public void drawExplosions(Graphics g2d) {
         for (Explosion exp : explosions) {
             g2d.drawImage(exp.getImage(), exp.position.x, exp.position.y, null);
         }
     }
 
-	
 	public void bossAttack() {
 		projectiles.add(
 		new Projectile(boss.getX(), boss.getY(), getAttackVector(), 5.0f)
@@ -400,7 +415,6 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		return AtkVector;
 	}
 
-	
 	public void keyTyped(KeyEvent e) {
 			
 	}
@@ -429,9 +443,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		if (e.getKeyChar() == '2')
 			boss.setAttackState(Boss.AttackStates.ARMAGEDDON);
 		if (e.getKeyChar() == '3')
-			attack3 = true;
-		if (e.getKeyChar() == '4')
-			attack4 = true;
+			boss.setAttackState(Boss.AttackStates.TAP);
 	}
 	
 	public void keyReleased(KeyEvent e) {
@@ -500,8 +512,6 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 	    updatePlayerState();  // re-evaluate state based on current keys
 	}
 
-	 
-	 
 	@Override
 	public void mouseClicked(MouseEvent e) {
 	}
@@ -527,6 +537,4 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		// TODO Auto-generated method stub
 		
 	}
-
-
 }

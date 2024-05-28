@@ -29,6 +29,7 @@ public class SoundPlayer {
     public void playSoundEffect(String soundFile) {
         Clip soundClip = loadClip(soundFile);
         if (soundClip != null) {
+            musicClip.loop(0);
             soundClip.start();  
         }
     }
