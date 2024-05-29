@@ -1,8 +1,11 @@
 package pixel_souls;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -52,6 +55,11 @@ public class Boss { // screw inheritance
     
     private attackInitListener attackInitListener;
     
+	private List<Point> patrolPath = new ArrayList<>(); // the patrol path
+	private int currentWaypoint = 0; // the current waypoint the boss is moving towards
+	private static final double SPEED = 1.5;
+	private static final double THRESHOLD = 1.0;
+	private long waypointReachedTime;
     
     public interface attackInitListener {
     	void attack();
@@ -93,9 +101,39 @@ public class Boss { // screw inheritance
 		health = 500;
 		setSprites(sprites);
 		setHitbox(new Rectangle((int)x, (int)y, width, height));
+
+		createPatrolPath();
 	}
 
-	
+	public void createPatrolPath() {
+		patrolPath.add(new Point(959, 389));
+		patrolPath.add(new Point(671, 215));
+		patrolPath.add(new Point(838, 209));
+		patrolPath.add(new Point(1030, 206));
+		patrolPath.add(new Point(1021, 360));
+		patrolPath.add(new Point(792, 407));
+		patrolPath.add(new Point(711, 567));
+		patrolPath.add(new Point(504, 419));
+		patrolPath.add(new Point(777, 208));
+		patrolPath.add(new Point(469, 174));
+		patrolPath.add(new Point(211, 255));
+		patrolPath.add(new Point(347, 371));
+		patrolPath.add(new Point(381, 523));
+		patrolPath.add(new Point(502, 297));
+		patrolPath.add(new Point(645, 547));
+		patrolPath.add(new Point(842, 359));
+		patrolPath.add(new Point(375, 137));
+		patrolPath.add(new Point(826, 150));
+		patrolPath.add(new Point(1166, 258));
+		patrolPath.add(new Point(1002, 409));
+		patrolPath.add(new Point(987, 594));
+		patrolPath.add(new Point(691, 428));
+		patrolPath.add(new Point(251, 570));
+		patrolPath.add(new Point(50, 526));
+		patrolPath.add(new Point(175, 283));
+		patrolPath.add(new Point(699, 124));
+		patrolPath.add(new Point(1024, 406));
+	}
 
 	public boolean canAttack() {
 	        long currentTime = System.currentTimeMillis();
@@ -218,6 +256,40 @@ public class Boss { // screw inheritance
 	    }
 	}
 	
+	public void patrol() {
+		Point target = patrolPath.get(currentWaypoint);
+
+		if (this.x == target.x && this.y == target.y && System.currentTimeMillis() - waypointReachedTime >= 1000) {
+			currentWaypoint = (currentWaypoint + 1) % patrolPath.size();
+			waypointReachedTime = System.currentTimeMillis(); 
+		} else if (this.x != target.x || this.y != target.y) { 
+			moveTowards(target.x, target.y);
+		}
+	}
+	
+
+	public void moveTowards(int targetX, int targetY) {
+		double dx = targetX - this.x;
+		double dy = targetY - this.y;
+	
+		double distance = Math.sqrt(dx * dx + dy * dy);
+
+		if (distance <= THRESHOLD) {
+			this.x = targetX;
+			this.y = targetY;
+		} else {
+			double directionX = dx / distance;
+			double directionY = dy / distance;
+		
+	
+		this.x += directionX * SPEED;
+		this.y += directionY * SPEED;
+		}
+		if (this.x == targetX && this.y == targetY) {
+			waypointReachedTime = System.currentTimeMillis();
+		}
+
+	}
 
 	public BufferedImage getIdleRightSprite(int frameCt) {
 		if (!isFlashingRed) 

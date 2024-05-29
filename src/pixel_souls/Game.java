@@ -48,6 +48,8 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 
     private Font font;
 
+	private ArrayList<Point> waypointList = new ArrayList<>();
+
 	// controlling frametiming below
 	final double TARGET_FRAME_TIME = 1000.0 / 60.0;  // 60 FPS
 	private double deltaTime;
@@ -144,6 +146,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			
 		}
 		case "GAME": {
+			boss.patrol(); 
 			player.updateInvincibility();
 			updateExplosions();
 			world.mapRenderUnder(g2d);
@@ -256,8 +259,8 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 	public int playerDistance() {
 		return (int) Math.sqrt(Math.pow(player.getX() - boss.getX(), 2) + Math.pow(player.getY() - boss.getY(), 2));
 	}
-	
-    public void bossAICheck() { 
+	// unimplemented: using set patrol path instead
+    /* public void bossAICheck() { 
 	        // constants for AI behavior
 
 			int retreatDistance = 50; 
@@ -295,7 +298,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 	        }
 	        		
         }
-	        
+	*/    
     public void bossAttackLogic() {
         switch (boss.getAttackState()) {
         case IDLE: 
@@ -314,7 +317,6 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		default:
 			break;
         }
-        System.out.println(boss.getAttackState());
     }
     
     public void bossBloom() {
@@ -488,7 +490,6 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 
 	    if (pressedKeys.contains(KeyEvent.VK_F) && canAttack()) {
 	        player.setState(player.getAttackDirection());
-	        System.out.println(player.attackCheck(boss));
 	        isAttacking = true;
 	    }
 
@@ -514,6 +515,8 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		waypointList.add(new Point(e.getX(), e.getY()));
+		System.out.println(waypointList);
 	}
 
 	@Override
