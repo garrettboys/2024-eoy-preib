@@ -116,7 +116,7 @@ public class Player  {
 		this.health = 100;
 		this.moveCooldownMs = 75;
 		this.setState(States.IDLE_RIGHT);
-		this.setSpeed(90);
+		this.setSpeed(100);
 		this.idleRightFrameCount = 1;
 		this.idleLeftFrameCount = 1;
 		this.runRightFrameCount = 1;
@@ -198,23 +198,41 @@ public class Player  {
 	}
 	
 	public boolean attackCheck(Boss boss) {
-	    // uses rectangles because the collision formula is annoying and i want to use .intersects
-	    Rectangle attackArea = new Rectangle(
-	        (int)this.getHitbox().getX() - this.getAttackRange(), 
-	        (int)this.getHitbox().getY() - this.getAttackRange(), 
-	        this.getAttackRange() * 2, 
-	        this.getAttackRange() * 2
-	    );
+		int x = (int)this.getHitbox().getX();
+		int y = (int)this.getHitbox().getY();
+		int range = this.getAttackRange();
 
-	  
-	    if (attackArea.intersects(boss.getHitbox())) {
-	        boss.setHealth(boss.getHealth() - 10);
-	        boss.setFlashingRed(true);
-	        boss.setRedFlashFramesRemaining(12);
-	        return true;
-	    }
-	    return false;
-	}
+		// Adjust the attackArea based on the player's state
+		switch (this.getState()) {
+			case ATK_WEST:
+				x -= range;
+				break;
+			case ATK_EAST:
+				x += range;
+				break;
+			case ATK_NORTH:
+				y -= range;
+				break;
+			case ATK_SOUTH:
+				y += range;
+				break;
+			default:
+				x += range;
+
+		}
+		
+    Rectangle attackArea = new Rectangle(x, y, range * 2, range * 2);
+
+    if (attackArea.intersects(boss.getHitbox())) {
+        boss.setHealth(boss.getHealth() - 10);
+        boss.setFlashingRed(true);
+        boss.setRedFlashFramesRemaining(12);
+		if (boss.getHealth() <= 0) 
+			Game.gameState = "WIN";
+        return true;
+    }
+    return false;
+}
 	
 	
 	public States getAttackDirection() {
