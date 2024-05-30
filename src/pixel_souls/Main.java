@@ -29,8 +29,6 @@ public class Main extends JFrame{
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		Main run = new Main();
-		
-
 	}
 
 
