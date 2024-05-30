@@ -26,8 +26,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 
-@SuppressWarnings("serial")
-public class Game  extends JPanel implements Runnable, KeyListener, MouseListener{ 
+public class Game extends JPanel implements Runnable, KeyListener, MouseListener{ 
 	
 	private BufferedImage back; 
 	private World world;
@@ -38,11 +37,12 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 	private SoundPlayer soundPlayer;
 	private ArrayList<Projectile> projectiles;
     private List<Explosion> explosions;
-    private String gameState;
+    public static String gameState;
     private ImageIcon titleScreen = new ImageIcon("assets/title_assets/bg.png");
     private ImageIcon logo = new ImageIcon("assets/title_assets/logo.png");
     private ImageIcon tab = new ImageIcon("assets/title_assets/tab.png");
 	private ImageIcon gameOver = new ImageIcon("assets/over_assets/gameover.png");
+	private ImageIcon win = new ImageIcon("assets/win.png");
     private Boolean drawHitboxes = false;
 	private Boolean gameOverDebounce = false;
 
@@ -81,7 +81,6 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 		soundPlayer = new SoundPlayer();
 		isAttacking = false;
 		soundPlayer.playMusic("assets/title_assets/titlebgm.wav");
-	// soundPlayer.playMusic("assets/pixel_souls_boss.wav"); put when game started
 		projectiles = new ArrayList<>();
 		explosions = new ArrayList<>();
 		gameState = "START";
@@ -142,6 +141,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			g2d.drawImage(tab.getImage(), 425, 400, null);
 			g2d.setFont(font.deriveFont(Font.PLAIN, 30));
 			g2d.drawString("Press Space to Start", 520, 435);
+			g2d.drawString("WASD to move, F to attack", 500, 350);
 			break;
 			
 		}
@@ -162,6 +162,21 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			bossAttackLogic();
 	        break;	
 			}
+		case "WIN" :  {
+			soundPlayer.stopMusic();
+			g2d.drawImage(win.getImage(), 0, 0, null);
+			g2d.setColor(Color.GREEN);
+			g2d.setFont(font.deriveFont(Font.PLAIN, 30));
+			g2d.drawString("good job! you killed the goblin. why would you do this", 300, 300);
+			if (!gameOverDebounce) {
+				soundPlayer.playSoundEffect("assets/electronic_win.wav");
+				soundPlayer.playSoundEffect("assets/marimba_win.wav");
+				soundPlayer.playSoundEffect("assets/violin_win.wav");
+			    gameOverDebounce = true;
+			}
+			break;
+		}
+
 		case "OVER" : {
 			soundPlayer.stopMusic();
 			g2d.drawImage(gameOver.getImage(), 0, 0, null);
@@ -175,6 +190,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			g2d.setFont(font.deriveFont(Font.PLAIN, 30));
 			g2d.drawString("there is no restart button. quit the game", 500, 500);
 			}
+			break;
 		}
 		
 
@@ -195,6 +211,15 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			g2d.drawRect((int) projectileHitbox.getX(), (int) projectileHitbox.getY(),
 					(int) projectileHitbox.getWidth(), (int) projectileHitbox.getHeight());
 		}
+		// g2d.setColor(Color.blue);
+		// g2d.drawRect(
+		// (int)player.getHitbox().getX() - player.getAttackRange(), 
+		// (int)player.getHitbox().getY() - player.getAttackRange(), 
+		// player.getAttackRange() * 2, 
+		// player.getAttackRange() * 2
+	    // );
+		// g2d.setColor(Color.red);
+
 	}
 	
 	public void hitboxUpdate() {
@@ -326,7 +351,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
     	 long attackDuration = System.currentTimeMillis() - boss.getAttackDuration();
 	    	// spawn a projectile for every 5 degrees around the boss
     	 if (Math.random() < .1)
-			for (int i = 0; i < 360; i += 15) {
+			for (int i = 0; i < 360; i += 20) {
 				Vector bloomVector = new Vector((float) Math.cos(Math.toRadians(i)), (float) Math.sin(Math.toRadians(i)));
 				projectiles.add(new Projectile(boss.getX(), boss.getY(), bloomVector, 3.0f));
 			}
@@ -446,6 +471,8 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 			boss.setAttackState(Boss.AttackStates.ARMAGEDDON);
 		if (e.getKeyChar() == '3')
 			boss.setAttackState(Boss.AttackStates.TAP);
+		if (e.getKeyChar() == ']')
+			gameState = "WIN";
 	}
 	
 	public void keyReleased(KeyEvent e) {
@@ -490,6 +517,7 @@ public class Game  extends JPanel implements Runnable, KeyListener, MouseListene
 
 	    if (pressedKeys.contains(KeyEvent.VK_F) && canAttack()) {
 	        player.setState(player.getAttackDirection());
+			player.attackCheck(boss);
 	        isAttacking = true;
 	    }
 
